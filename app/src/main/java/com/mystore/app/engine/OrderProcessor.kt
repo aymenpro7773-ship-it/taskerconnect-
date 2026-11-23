@@ -17,6 +17,10 @@ class OrderProcessor(private val context: Context) {
         }
 
         val cleanBody = MessageParser.sanitize(rawBody)
+        if (prefs.requireJaibSender && !MessageParser.isJaibSource(senderPhone, cleanBody)) {
+            return "تم تجاهل الرسالة: المصدر ليس من حساب/رسائل Jaib."
+        }
+
         val parsed = MessageParser.parse(
             body = cleanBody,
             keywordPattern = prefs.keywordPattern,
@@ -27,13 +31,10 @@ class OrderProcessor(private val context: Context) {
         val candidateCategory = parsed.category?.trim()
             ?: extractAllowedCategoryFromText(cleanBody, allowedCategories)
 
-        // تجاهل صارم لأي رسالة لا تحتوي على فئة صريحة ضمن الفئات المسموحة فقط
-        // (يمنع تماماً اعتبار أرقام مثل 6761865 كفئة أو إطلاق "نفاد مخزون" عليها)
         if (candidateCategory.isNullOrEmpty() || candidateCategory !in allowedCategories) {
-            return "تم تجاهل الرسالة: لا توجد فئة معتمدة ضمن الفئات المسموحة."
+            return "تم تجاهل الرسالة: لا توجد فئة معتمدة ضمن الفئات المسموحة (${allowedCategories.joinToString()})."
         }
 
-        // استخراج رقم صريح كامل فقط، أو رقم بديل مفعّل مسبقاً صراحةً (بدون أي ربط بالبادئة المشابهة)
         val resolvedPhone = resolveExplicitRecipientPhone(
             senderPhone = senderPhone,
             parsedPhone = parsed.customerPhone,
@@ -193,7 +194,8 @@ class OrderProcessor(private val context: Context) {
             amount = category,
             cardCode = card.code,
             bundles = prefs.getBundlesMap(),
-            template = prefs.replyTemplate
+            template = prefs.replyTemplate,
+            categoryTemplates = prefs.getCategoryTemplatesMap()
         )
 
         val sendResult = SmsSender.sendSms(context, customerPhone, replyMessage)
@@ -225,7 +227,28 @@ class OrderProcessor(private val context: Context) {
         )
 
         db.pendingSmsDao().updateStatus(pendingId, "SENT", null, System.currentTimeMillis())
-        return "تم تنفيذ الطلب وإرسال الكرت فئة ${card.category} إلى $customerPhone"
+
+        // إشعار إرسال الكرت
+        NotificationHelper.showAlert(
+            context,
+            "تم بيع كود $category",
+            "أرسل الرقم: $customerPhone | الكرت: ${card.code}",
+            notificationId = (pendingId % 1000 + 2300).toInt()
+        )
+
+        // تنبيه انخفاض المخزون عند الوصول للحد المحدد (افتراضي <= 1)
+        val remaining = db.cardDao().getAvailableCountsByCategory()
+            .firstOrNull { it.category == category }?.availableCount ?: 0
+        if (remaining <= prefs.lowStockThreshold) {
+            NotificationHelper.showAlert(
+                context,
+                "تنبيه انخفاض المخزون",
+                "فئة $category متبقي فيها $remaining كرت فقط!",
+                notificationId = 2011
+            )
+        }
+
+        return "تم تنفيذ الطلب وإرسال الكرت فئة ${card.category} (${card.code}) إلى $customerPhone | المتبقي: $remaining"
     }
 
     private fun resolveExplicitRecipientPhone(
@@ -233,7 +256,6 @@ class OrderProcessor(private val context: Context) {
         parsedPhone: String?,
         rawBody: String
     ): String? {
-        // 1. رقم صريح كامل (9 أرقام تبدأ بـ 7) في الرسالة المحللة أو في نص الرسالة
         val sanitizedBody = rawBody.replace(Regex("""رص\s*:?\s*\d+(?:\.\d+)?"""), " ")
         val explicitInBody = Regex("""\b(7\d{8})\b""").findAll(sanitizedBody)
             .map { it.value }
@@ -242,7 +264,6 @@ class OrderProcessor(private val context: Context) {
         if (prefs.isValidYemeniPhone(parsedPhone)) return parsedPhone!!.filter { it.isDigit() }
         if (explicitInBody != null) return explicitInBody
 
-        // 2. رقم بديل مفعّل مسبقاً صراحةً للأرقام النهائية الظاهرة أو للمرسل
         val trailingDigits = extractPartialDigits(rawBody)
         if (!trailingDigits.isNullOrBlank()) {
             val aliasByTrailing = prefs.getExplicitAlias(trailingDigits)
@@ -252,8 +273,7 @@ class OrderProcessor(private val context: Context) {
         val aliasBySender = prefs.getExplicitAlias(senderPhone)
         if (aliasBySender != null) return aliasBySender
 
-        // 3. إذا كان المرسل نفسه رقماً يمنياً كاملاً صريحاً في رسالة طلب مباشرة
-        if (prefs.isValidYemeniPhone(senderPhone)) {
+        if (prefs.isValidYemeniPhone(senderPhone) && !MessageParser.isJaibSource(senderPhone, rawBody)) {
             return senderPhone.filter { it.isDigit() }
         }
 
@@ -261,7 +281,6 @@ class OrderProcessor(private val context: Context) {
     }
 
     private fun extractAllowedCategoryFromText(body: String, allowedCategories: List<String>): String? {
-        // يلتقط فئة صريحة تلي كلمة (فئة / كرت / باقة / اضيف) وتكون ضمن الفئات المسموحة فقط
         val match = Regex("""(?:فئة|كرت|باقة|اضيف)\s*(\d+)""").find(body)
         val candidate = match?.groupValues?.get(1)?.trim()
         return if (candidate != null && candidate in allowedCategories) candidate else null
