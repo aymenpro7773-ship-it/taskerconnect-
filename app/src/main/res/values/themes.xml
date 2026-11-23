@@ -1,16 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- الثيم الافتراضي (النهاري: أبيض واضح ونصوص داكنة) -->
     <style name="Theme.MyStore" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/md_theme_light_primary</item>
-        <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
-        <item name="colorSecondary">@color/md_theme_light_secondary</item>
-        <item name="colorOnSecondary">@color/md_theme_light_onSecondary</item>
-        <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#00897B</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:statusBarColor">@color/app_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <color name="md_theme_light_primary">#1565C0</color>
-    <color name="md_theme_light_onPrimary">#FFFFFF</color>
-    <color name="md_theme_light_secondary">#00897B</color>
-    <color name="md_theme_light_onSecondary">#FFFFFF</color>
-</resources>
+    <!-- الثيم الليلي (أسود واضح ونصوص بيضاء) -->
+    <style name="Theme.MyStore.Night" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#38BDF8</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorSecondary">#14B8A6</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="android:statusBarColor">@color/night_app_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 
+    <!-- ألوان النهار -->
+    <color name="app_bg">#FFFFFF</color>
+    <color name="card_bg">#F8FAFC</color>
+    <color name="card_stroke">#CBD5E1</color>
+    <color name="input_bg">#F1F5F9</color>
+    <color name="log_bg">#E2E8F0</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#334155</color>
+    <color name="text_hint">#64748B</color>
+    <color name="accent_primary">#0F172A</color>
+
+    <!-- ألوان الليل -->
+    <color name="night_app_bg">#000000</color>
+    <color name="night_card_bg">#090D16</color>
+    <color name="night_card_stroke">#1E293B</color>
+    <color name="night_input_bg">#111827</color>
+    <color name="night_log_bg">#05070C</color>
+    <color name="night_text_primary">#FFFFFF</color>
+    <color name="night_text_secondary">#E2E8F0</color>
+    <color name="night_text_hint">#94A3B8</color>
+    <color name="night_accent_primary">#38BDF8</color>
+</resources>
