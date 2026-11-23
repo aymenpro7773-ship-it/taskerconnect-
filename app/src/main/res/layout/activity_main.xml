@@ -304,7 +304,7 @@
                         android:layout_marginTop="10dp"
                         android:background="@color/night_input_bg"
                         android:gravity="top"
-                        android:hint="اختياري: اكتب الفئة فقط (مثل 100 أو 500) أو نص رسالة"
+                        android:hint="اختياري: اكتب الفئة فقط (مثل 100 أو 500 أو 2000)"
                         android:lines="2"
                         android:padding="14dp"
                         android:textColor="@color/night_text_primary"
@@ -341,7 +341,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 3) قسم المخزن والملفات والفئات -->
+                <!-- 3) قسم المخزن والملفات وإدارة الكروت -->
                 <LinearLayout
                     android:id="@+id/sectionStock"
                     android:layout_width="match_parent"
@@ -352,7 +352,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="المخزن والملفات وإدارة الفئات"
+                        android:text="المخزن والملفات وقائمة الكروت"
                         android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -362,16 +362,17 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:orientation="horizontal"
-                        android:weightSum="4">
+                        android:weightSum="5">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnCat100"
                             android:layout_width="0dp"
                             android:layout_height="40dp"
-                            android:layout_marginEnd="4dp"
+                            android:layout_marginEnd="3dp"
                             android:layout_weight="1"
                             android:text="100"
                             android:textColor="#FFFFFF"
+                            android:textSize="12sp"
                             app:backgroundTint="#1E40AF"
                             app:cornerRadius="12dp" />
 
@@ -379,10 +380,11 @@
                             android:id="@+id/btnCat200"
                             android:layout_width="0dp"
                             android:layout_height="40dp"
-                            android:layout_marginEnd="4dp"
+                            android:layout_marginEnd="3dp"
                             android:layout_weight="1"
                             android:text="200"
                             android:textColor="#FFFFFF"
+                            android:textSize="12sp"
                             app:backgroundTint="#1E40AF"
                             app:cornerRadius="12dp" />
 
@@ -390,10 +392,11 @@
                             android:id="@+id/btnCat500"
                             android:layout_width="0dp"
                             android:layout_height="40dp"
-                            android:layout_marginEnd="4dp"
+                            android:layout_marginEnd="3dp"
                             android:layout_weight="1"
                             android:text="500"
                             android:textColor="#FFFFFF"
+                            android:textSize="12sp"
                             app:backgroundTint="#1E40AF"
                             app:cornerRadius="12dp" />
 
@@ -401,10 +404,23 @@
                             android:id="@+id/btnCat1000"
                             android:layout_width="0dp"
                             android:layout_height="40dp"
+                            android:layout_marginEnd="3dp"
                             android:layout_weight="1"
                             android:text="1000"
                             android:textColor="#FFFFFF"
+                            android:textSize="11sp"
                             app:backgroundTint="#1E40AF"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCat2000"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="2000"
+                            android:textColor="#FFFFFF"
+                            android:textSize="11sp"
+                            app:backgroundTint="#0F766E"
                             app:cornerRadius="12dp" />
                     </LinearLayout>
 
@@ -414,8 +430,9 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:background="@color/night_input_bg"
-                        android:hint="الفئة الحالية (مثال: 100 أو 200)"
+                        android:hint="الفئة الحالية (مثبتة افتراضياً على 100)"
                         android:padding="14dp"
+                        android:text="100"
                         android:textColor="@color/night_text_primary"
                         android:textColorHint="@color/night_text_hint" />
 
@@ -426,8 +443,8 @@
                         android:layout_marginTop="10dp"
                         android:background="@color/night_input_bg"
                         android:gravity="top"
-                        android:hint="أدخل الأكواد (كود بكل سطر)..."
-                        android:lines="4"
+                        android:hint="أدخل أكواداً جديدة للإضافة (كود بكل سطر)..."
+                        android:lines="3"
                         android:padding="14dp"
                         android:textColor="@color/night_text_primary"
                         android:textColorHint="@color/night_text_hint" />
@@ -456,7 +473,7 @@
                             android:layout_height="46dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:text="عرض/تحديث الفئة"
+                            android:text="تعديل / حذف كرت"
                             android:textColor="#FFFFFF"
                             app:backgroundTint="#0284C7"
                             app:cornerRadius="16dp" />
@@ -504,7 +521,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="تقرير البيع والاستلام والزبائن والأرشيف"
+                        android:text="تقرير البيع والاستلام والزبائن والـ PDF"
                         android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -554,7 +571,7 @@
                             android:layout_width="0dp"
                             android:layout_height="46dp"
                             android:layout_weight="1"
-                            android:text="الأرشيف"
+                            android:text="تصدير PDF"
                             android:textColor="#FFFFFF"
                             app:backgroundTint="#0284C7"
                             app:cornerRadius="14dp" />
@@ -575,7 +592,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="@color/night_input_bg"
-                        android:hint="المفتاح أو الرقم الظاهر (مثال: 775137807 أو 617)"
+                        android:hint="المفتاح أو الرقم المختصر الظاهر (مثال: 775137807 أو 617)"
                         android:inputType="number"
                         android:padding="12dp"
                         android:textColor="@color/night_text_primary"
@@ -604,7 +621,7 @@
                         app:cornerRadius="16dp" />
                 </LinearLayout>
 
-                <!-- 5) قسم الضبط والقوالب والاحتياطات والبصمة والنقش -->
+                <!-- 5) قسم الضبط والقوالب والنسخة الاحتياطية والأمان -->
                 <LinearLayout
                     android:id="@+id/sectionSettings"
                     android:layout_width="match_parent"
@@ -615,7 +632,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="الضبط والقوالب والاحتياطات والأمان"
+                        android:text="الضبط والنسخة الاحتياطية والأمان"
                         android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -722,7 +739,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="@color/night_input_bg"
-                        android:hint="رقم الفئة (مثال: 200 أو 500)"
+                        android:hint="رقم الفئة (مثال: 200 أو 500 أو 2000)"
                         android:inputType="number"
                         android:padding="12dp"
                         android:textColor="@color/night_text_primary"
@@ -756,7 +773,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="12dp"
-                        android:text="حفظ القواعد والخصائص"
+                        android:text="حفظ القواعد + نسخة احتياطية"
                         android:textColor="#FFFFFF"
                         app:backgroundTint="#2563EB"
                         app:cornerRadius="16dp" />
@@ -766,7 +783,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="46dp"
                         android:layout_marginTop="10dp"
-                        android:text="إذن الظهور فوق التطبيقات / الاحتياطات"
+                        android:text="إعدادات التطبيق والبطارية (تشغيل دائم)"
                         android:textColor="#FFFFFF"
                         app:backgroundTint="#0F766E"
                         app:cornerRadius="16dp" />
@@ -795,7 +812,7 @@
                             android:layout_height="46dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:text="تفعيل النقش/الرمز"
+                            android:text="تفعيل الرمز/النقش"
                             android:textColor="#FFFFFF"
                             app:backgroundTint="#0D9488"
                             app:cornerRadius="16dp" />
@@ -817,7 +834,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="46dp"
                         android:layout_marginTop="10dp"
-                        android:text="قفل / فحص بالبصمة"
+                        android:text="فحص القفل الآن (بصمة / رمز)"
                         android:textColor="#FFFFFF"
                         app:backgroundTint="#1E40AF"
                         app:cornerRadius="16dp" />
