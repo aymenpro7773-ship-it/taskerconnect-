@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:paddingBottom="84dp">
 
-        <!-- شريط علوي عصري -->
+        <!-- شريط علوي موديل 2027 مع الشعار -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,6 +28,15 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/ivAppLogo"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="12dp"
+                    android:contentDescription="شعار connect net"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/connect_net_logo" />
 
                 <LinearLayout
                     android:layout_width="0dp"
