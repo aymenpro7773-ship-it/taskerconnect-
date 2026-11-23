@@ -3,6 +3,8 @@ package com.mystore.app.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -32,6 +34,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -44,8 +48,13 @@ class MainActivity : AppCompatActivity() {
     private val db by lazy { AppDatabase.getInstance(this) }
     private val processor by lazy { OrderProcessor(this) }
     private val eventLogs = ArrayDeque<String>()
+
+    // قائمة الكروت المتاحة في الذاكرة المحلية لكل فئة لسهولة عرض كل الكروت وتعديلها وحذفها
+    private val categoryCardsCache = linkedMapOf<String, MutableList<String>>()
     private var selectedStockCategory: String = "100"
     private var lastExportContent: String = ""
+    private var lockShownInSession: Boolean = false
+    private var isUnlockedInSession: Boolean = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -59,11 +68,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val exportReportLauncher = registerForActivityResult(
+    private val exportTextLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri: Uri? ->
         if (uri != null) {
-            exportContentToUri(uri, lastExportContent)
+            exportTextToUri(uri, lastExportContent)
         }
     }
 
@@ -76,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         applyPaletteDirectly(prefs.isDarkMode)
+        loadLocalCardCacheFromPrefs()
 
         if (prefs.isServiceEnabled) {
             AutomationService.startService(this)
@@ -88,8 +98,12 @@ class MainActivity : AppCompatActivity() {
         loadRulesIntoSettingsFields()
         refreshDashboardSummary()
         recordLog("تم تشغيل التطبيق بنمط 2027 (المصادر: ${prefs.allowedSourcesCsv}).")
+    }
 
-        if (prefs.isLockEnabled) {
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && prefs.isLockEnabled && !isUnlockedInSession && !lockShownInSession) {
+            lockShownInSession = true
             triggerBiometricOrSecretLock()
         }
     }
@@ -153,6 +167,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadLocalCardCacheFromPrefs() {
+        val sp = getSharedPreferences("cards_list_cache", MODE_PRIVATE)
+        val raw = sp.getString("cache_blob", "") ?: ""
+        categoryCardsCache.clear()
+        if (raw.isNotBlank()) {
+            raw.split("###").forEach { block ->
+                val parts = block.split("::", limit = 2)
+                if (parts.size == 2 && parts[0].isNotBlank()) {
+                    val codes = parts[1].split("\n")
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .toMutableList()
+                    categoryCardsCache[parts[0].trim()] = codes
+                }
+            }
+        }
+        if (!categoryCardsCache.containsKey("100")) {
+            categoryCardsCache["100"] = mutableListOf()
+        }
+    }
+
+    private fun saveLocalCardCacheToPrefs() {
+        val sp = getSharedPreferences("cards_list_cache", MODE_PRIVATE)
+        val blob = categoryCardsCache.entries.joinToString("###") { (cat, list) ->
+            "$cat::${list.joinToString("\n")}"
+        }
+        sp.edit().putString("cache_blob", blob).apply()
+    }
+
     private fun syncServiceStatusUi() {
         binding.tvServiceStatus.text = if (prefs.isServiceEnabled) {
             "حالة الخدمة: نشطة (تعمل بالخلفية)"
@@ -194,9 +237,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_send -> binding.sectionSend.visibility = View.VISIBLE
                 R.id.nav_stock -> {
                     binding.sectionStock.visibility = View.VISIBLE
-                    if (binding.etStockCategory.text.isNullOrBlank()) {
-                        binding.etStockCategory.setText(selectedStockCategory)
-                    }
+                    binding.etStockCategory.setText(selectedStockCategory)
+                    showCategoryCardsList(selectedStockCategory)
                 }
                 R.id.nav_customers -> {
                     binding.sectionCustomers.visibility = View.VISIBLE
@@ -234,7 +276,7 @@ class MainActivity : AppCompatActivity() {
             prefs.isServiceEnabled = false
             AutomationService.stopService(this)
             syncServiceStatusUi()
-            appendOutput("تم إيقاف خدمة الأتمتة يدوياً ولن تعود للعمل إلا بتشغيلها.")
+            appendOutput("تم إيقاف خدمة الأتمتة يدوياً.")
             recordLog("إيقاف خدمة الأتمتة يدوياً.")
         }
 
@@ -311,6 +353,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnCat200.setOnClickListener { selectCategoryForStock("200") }
         binding.btnCat500.setOnClickListener { selectCategoryForStock("500") }
         binding.btnCat1000.setOnClickListener { selectCategoryForStock("1000") }
+        binding.btnCat2000.setOnClickListener { selectCategoryForStock("2000") }
 
         binding.btnAddCodes.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
@@ -329,16 +372,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnEditCategoryStock.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
-            val rawLines = binding.etBulkCodes.text.toString()
-            val newCodes = rawLines.split(Regex("\\r?\\n"))
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-
-            if (newCodes.isNotEmpty()) {
-                insertCodesList(category, newCodes, clearBox = true)
-            } else {
-                selectCategoryForStock(category)
-            }
+            openEditOrDeleteCardDialog(category)
         }
 
         binding.btnImportFile.setOnClickListener {
@@ -351,14 +385,15 @@ class MainActivity : AppCompatActivity() {
         binding.btnExportFile.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
-            lifecycleScope.launch {
-                val content = withContext(Dispatchers.IO) {
-                    buildCategoryExportText(category)
+            val list = categoryCardsCache[category].orEmpty()
+            lastExportContent = buildString {
+                append("=== ملف كروت فئة $category (العدد: ${list.size}) ===\n")
+                list.forEachIndexed { idx, code ->
+                    append("${idx + 1}: $code\n")
                 }
-                lastExportContent = content
-                val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-                exportReportLauncher.launch("category_${category}_$stamp.txt")
             }
+            val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+            exportTextLauncher.launch("cards_${category}_$stamp.txt")
         }
 
         binding.btnSalesReceiptReport.setOnClickListener {
@@ -371,7 +406,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnLoadArchive.setOnClickListener {
-            loadSalesReport(7, "الأرشيف (آخر 7 أيام)")
+            exportSalesSummaryPdf()
         }
 
         binding.btnSaveCustomerAlias.setOnClickListener {
@@ -401,8 +436,14 @@ class MainActivity : AppCompatActivity() {
                 prefs.allowedCategoriesCsv = currentList.joinToString(",")
                 binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv)
             }
+            if (!categoryCardsCache.containsKey(newCat)) {
+                categoryCardsCache[newCat] = mutableListOf()
+                saveLocalCardCacheToPrefs()
+            }
+            selectedStockCategory = newCat
+            binding.etStockCategory.setText(newCat)
             binding.etNewCategory.setText("")
-            val msg = "تمت إضافة الفئة ($newCat) إلى قائمة الفئات المسموحة."
+            val msg = "تمت إضافة الفئة ($newCat) وتحديدها."
             appendOutput(msg)
             recordLog(msg)
         }
@@ -435,23 +476,19 @@ class MainActivity : AppCompatActivity() {
             if (bundles.isNotEmpty()) prefs.bundlesCsv = bundles
             if (tpl.isNotBlank()) prefs.replyTemplate = tpl
 
-            val msg = "تم حفظ الفئات (${prefs.allowedCategoriesCsv}) وحد التنبيه (${prefs.lowStockThreshold}) والقواعد."
+            val backupPath = createLocalBackupFile()
+            val msg = "تم حفظ القواعد وأُنشئت نسخة احتياطية:\n$backupPath"
             appendOutput(msg)
-            recordLog(msg)
+            recordLog("حفظ القواعد + نسخة احتياطية.")
         }
 
         binding.btnOverlayPermission.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName")
-                )
-                startActivity(intent)
-                recordLog("فتح إعدادات الظهور فوق التطبيقات.")
-            } else {
-                toast("إذن الظهور فوق التطبيقات مفعّل مسبقاً")
-                recordLog("إذن الظهور فوق التطبيقات مفعّل.")
-            }
+            val intent = Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+            recordLog("فتح إعدادات التطبيق والبطارية.")
         }
 
         binding.btnSaveLock.setOnClickListener {
@@ -462,22 +499,24 @@ class MainActivity : AppCompatActivity() {
             }
             prefs.setSecret(secret, "PATTERN")
             binding.etNewSecret.setText("")
-            val msg = "تم تفعيل/تحديث قفل الدخول بنجاح."
+            val msg = "تم تفعيل/حفظ الرمز أو النقش ($secret)."
             appendOutput(msg)
-            recordLog(msg)
+            recordLog("تفعيل قفل الرمز/النقش.")
         }
 
         binding.btnDisableLock.setOnClickListener {
             prefs.isLockEnabled = false
-            val msg = "تم إيقاف قفل الدخول الداخلي."
+            isUnlockedInSession = true
+            val msg = "تم إيقاف قفل الدخول."
             appendOutput(msg)
-            recordLog(msg)
+            recordLog("إيقاف قفل الدخول.")
         }
 
         binding.btnBiometricLock.setOnClickListener {
             prefs.isLockEnabled = true
+            isUnlockedInSession = false
+            lockShownInSession = false
             triggerBiometricOrSecretLock()
-            recordLog("تم تشغيل التحقق بالبصمة.")
         }
 
         binding.btnClearLog.setOnClickListener {
@@ -489,17 +528,78 @@ class MainActivity : AppCompatActivity() {
     private fun selectCategoryForStock(cat: String) {
         selectedStockCategory = cat
         binding.etStockCategory.setText(cat)
+        showCategoryCardsList(cat)
+    }
+
+    private fun showCategoryCardsList(cat: String) {
         lifecycleScope.launch {
-            val infoText = withContext(Dispatchers.IO) {
-                val summaries = db.cardDao().getAvailableCountsByCategory()
-                val availableCount = summaries.firstOrNull { it.category == cat }?.availableCount ?: 0
-                val nextCard = db.cardDao().getNextAvailableCard(cat)
-                val nextCodeInfo = if (nextCard != null) "\nالكرت التالي المتاح: ${nextCard.code}" else "\nلا توجد كروت متاحة حالياً"
-                "الفئة المحددة: $cat\nالكمية المتاحة: $availableCount كرت$nextCodeInfo"
+            val dbSummaries = withContext(Dispatchers.IO) {
+                db.cardDao().getAvailableCountsByCategory()
             }
-            appendOutput(infoText)
-            recordLog("فئة $cat: عرض المخزون المتاح.")
+            val list = categoryCardsCache.getOrPut(cat) { mutableListOf() }
+            val dbCount = dbSummaries.firstOrNull { it.category == cat }?.availableCount ?: 0
+
+            val countersLine = listOf("100", "200", "500", "1000", "2000").joinToString(" | ") { c ->
+                val n = categoryCardsCache[c]?.size ?: 0
+                "$c:$n"
+            }
+
+            val cardsBody = if (list.isEmpty()) {
+                "لا توجد كروت مسجلة في قائمة فئة $cat حالياً (المسجل في قاعدة البيانات: $dbCount)."
+            } else {
+                list.mapIndexed { idx, code -> "${idx + 1}. $code" }.joinToString("\n")
+            }
+
+            val text = buildString {
+                append("الفئة الحالية: $cat | عدد كروت الفئة: ${list.size} | قاعدة البيانات: $dbCount\n")
+                append("عداد الفئات: $countersLine\n")
+                append("----------------------------------\n")
+                append(cardsBody)
+            }
+            appendOutput(text)
+            recordLog("عرض كروت فئة $cat (العدد: ${list.size}).")
         }
+    }
+
+    private fun openEditOrDeleteCardDialog(cat: String) {
+        val list = categoryCardsCache.getOrPut(cat) { mutableListOf() }
+        if (list.isEmpty()) {
+            toast("لا توجد كروت في فئة $cat لتعديلها أو حذفها")
+            return
+        }
+
+        val items = list.mapIndexed { idx, code -> "${idx + 1} - $code" }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("اختر كرتاً من فئة $cat")
+            .setItems(items) { _, which ->
+                val currentCode = list[which]
+                val editInput = EditText(this).apply {
+                    setText(currentCode)
+                    hint = "تعديل الكود"
+                }
+                AlertDialog.Builder(this)
+                    .setTitle("الكرت رقم ${which + 1}")
+                    .setView(editInput)
+                    .setPositiveButton("حفظ التعديل") { _, _ ->
+                        val updated = editInput.text.toString().trim()
+                        if (updated.isNotEmpty()) {
+                            list[which] = updated
+                            saveLocalCardCacheToPrefs()
+                            showCategoryCardsList(cat)
+                            recordLog("تعديل كرت رقم ${which + 1} في فئة $cat.")
+                        }
+                    }
+                    .setNegativeButton("حذف الكرت") { _, _ ->
+                        list.removeAt(which)
+                        saveLocalCardCacheToPrefs()
+                        showCategoryCardsList(cat)
+                        recordLog("حذف كرت رقم ${which + 1} من فئة $cat.")
+                    }
+                    .setNeutralButton("إلغاء", null)
+                    .show()
+            }
+            .setNegativeButton("إغلاق", null)
+            .show()
     }
 
     private fun insertCodesList(category: String, codes: List<String>, clearBox: Boolean) {
@@ -507,6 +607,10 @@ class MainActivity : AppCompatActivity() {
             toast("لا توجد أكواد صالحة للإضافة")
             return
         }
+        val targetList = categoryCardsCache.getOrPut(category) { mutableListOf() }
+        targetList.addAll(codes)
+        saveLocalCardCacheToPrefs()
+
         lifecycleScope.launch {
             val inserted = withContext(Dispatchers.IO) {
                 val entities = codes.map { code ->
@@ -522,10 +626,9 @@ class MainActivity : AppCompatActivity() {
             if (clearBox) {
                 binding.etBulkCodes.setText("")
             }
-            val msg = "تمت إضافة $inserted كرت إلى فئة $category."
-            appendOutput(msg)
-            recordLog(msg)
+            showCategoryCardsList(category)
             refreshDashboardSummary()
+            recordLog("إضافة ${codes.size} كرت إلى فئة $category (مضاف لقاعدة البيانات: $inserted).")
         }
     }
 
@@ -549,26 +652,10 @@ class MainActivity : AppCompatActivity() {
                 list
             }
             insertCodesList(category, codes, clearBox = false)
-            recordLog("استيراد ملف لفئة $category (${codes.size} سطر).")
         }
     }
 
-    private suspend fun buildCategoryExportText(category: String): String {
-        val summaries = db.cardDao().getAvailableCountsByCategory()
-        val count = summaries.firstOrNull { it.category == category }?.availableCount ?: 0
-        val nextCard = db.cardDao().getNextAvailableCard(category)
-        return buildString {
-            append("=== ملف الفئة: $category ===\n")
-            append("الكمية المتاحة في المخزون: $count\n")
-            if (nextCard != null) {
-                append("الكرت التالي المتاح: ${nextCard.code}\n")
-            }
-            append("الباقة: ${prefs.getBundlesMap()[category].orEmpty()}\n")
-            append("التاريخ: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())}\n")
-        }
-    }
-
-    private fun exportContentToUri(uri: Uri, contentToSave: String) {
+    private fun exportTextToUri(uri: Uri, contentToSave: String) {
         lifecycleScope.launch {
             val ok = withContext(Dispatchers.IO) {
                 try {
@@ -581,13 +668,87 @@ class MainActivity : AppCompatActivity() {
                     false
                 }
             }
-            val msg = if (ok) {
-                "تم تصدير ملف الفئة بنجاح."
-            } else {
-                "تعذر تصدير الملف."
-            }
+            val msg = if (ok) "تم تصدير الملف بنجاح." else "تعذر تصدير الملف."
             appendOutput(msg)
             recordLog(msg)
+        }
+    }
+
+    private fun createLocalBackupFile(): String {
+        val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val dir = getExternalFilesDir(null) ?: filesDir
+        val file = File(dir, "backup_$stamp.txt")
+        val content = buildString {
+            append("=== نسخة احتياطية ===\n")
+            append("التاريخ: $stamp\n")
+            append("الفئات المسموحة: ${prefs.allowedCategoriesCsv}\n")
+            append("الباقات: ${prefs.bundlesCsv}\n")
+            append("قالب الرد: ${prefs.replyTemplate}\n")
+            categoryCardsCache.forEach { (cat, list) ->
+                append("\n[فئة $cat - العدد ${list.size}]\n")
+                list.forEach { append("$it\n") }
+            }
+        }
+        FileOutputStream(file).use { it.write(content.toByteArray(Charsets.UTF_8)) }
+        return file.absolutePath
+    }
+
+    private fun exportSalesSummaryPdf() {
+        lifecycleScope.launch {
+            val pdfPath = withContext(Dispatchers.IO) {
+                val now = System.currentTimeMillis()
+                val dayAgo = now - (24L * 60L * 60L * 1000L)
+                val weekAgo = now - (7L * 24L * 60L * 60L * 1000L)
+                val monthAgo = now - (30L * 24L * 60L * 60L * 1000L)
+
+                val dCount = db.saleLogDao().getSalesCountSince(dayAgo)
+                val dRev = db.saleLogDao().getTotalRevenueSince(dayAgo)
+                val wCount = db.saleLogDao().getSalesCountSince(weekAgo)
+                val wRev = db.saleLogDao().getTotalRevenueSince(weekAgo)
+                val mCount = db.saleLogDao().getSalesCountSince(monthAgo)
+                val mRev = db.saleLogDao().getTotalRevenueSince(monthAgo)
+                val sales = db.saleLogDao().getSalesSince(monthAgo).take(15)
+
+                val doc = PdfDocument()
+                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+                val page = doc.startPage(pageInfo)
+                val canvas = page.canvas
+                val paint = Paint().apply { textSize = 13f }
+
+                var y = 45f
+                val lines = mutableListOf(
+                    "Sales Summary Report (Day / Week / Month)",
+                    "Date: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())}",
+                    "Today: Count=$dCount | Total=$dRev",
+                    "Week: Count=$wCount | Total=$wRev",
+                    "Month: Count=$mCount | Total=$mRev",
+                    "----------------------------------------"
+                )
+                sales.forEach { s ->
+                    lines.add("Phone=${s.customerPhone} | Cat=${s.cardCategory} | Code=${s.cardCode} | Amt=${s.amount}")
+                }
+                for (line in lines) {
+                    canvas.drawText(line, 30f, y, paint)
+                    y += 24f
+                    if (y > 790f) break
+                }
+                doc.finishPage(page)
+
+                val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                val dir = getExternalFilesDir(null) ?: filesDir
+                val outFile = File(dir, "sales_summary_$stamp.pdf")
+                FileOutputStream(outFile).use { doc.writeTo(it) }
+                doc.close()
+                outFile.absolutePath
+            }
+
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("تم إنشاء ملف PDF")
+                .setMessage("ملخص العمليات (اليوم / الأسبوع / الشهر) جاهز في:\n$pdfPath")
+                .setPositiveButton("حسناً", null)
+                .show()
+            appendOutput("تم إنشاء ملف PDF بنجاح:\n$pdfPath")
+            recordLog("تصدير ملخص العمليات PDF.")
         }
     }
 
@@ -605,26 +766,47 @@ class MainActivity : AppCompatActivity() {
                 object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                         super.onAuthenticationSucceeded(result)
-                        toast("تم التحقق بالبصمة بنجاح")
+                        isUnlockedInSession = true
+                        toast("تم فتح القفل بالبصمة")
                     }
 
                     override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                         super.onAuthenticationError(errorCode, errString)
-                        if (prefs.hasSecret()) {
-                            showLockDialog()
-                        }
+                        showLockDialog()
                     }
                 }
             )
             val info = BiometricPrompt.PromptInfo.Builder()
-                .setTitle("قفل التطبيق بالبصمة")
-                .setSubtitle("أكد هويتك للمتابعة")
-                .setNegativeButtonText("استخدام الرمز/النقش")
+                .setTitle("قفل التطبيق")
+                .setSubtitle("أكد البصمة أو استخدم الرمز")
+                .setNegativeButtonText("استخدام الرمز")
                 .build()
             prompt.authenticate(info)
-        } else if (prefs.hasSecret()) {
+        } else {
             showLockDialog()
         }
+    }
+
+    private fun showLockDialog() {
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            hint = "أدخل الرمز أو النقش"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("قفل الدخول")
+            .setView(input)
+            .setCancelable(false)
+            .setPositiveButton("دخول") { _, _ ->
+                val entered = input.text.toString().trim()
+                if (!prefs.hasSecret() || prefs.verifySecret(entered)) {
+                    isUnlockedInSession = true
+                } else {
+                    toast("الرمز غير صحيح")
+                    showLockDialog()
+                }
+            }
+            .setNegativeButton("خروج") { _, _ -> finish() }
+            .show()
     }
 
     private fun loadSalesAndReceiptSummary() {
@@ -641,23 +823,12 @@ class MainActivity : AppCompatActivity() {
                 val wRev = db.saleLogDao().getTotalRevenueSince(weekAgo)
                 val mCount = db.saleLogDao().getSalesCountSince(monthAgo)
                 val mRev = db.saleLogDao().getTotalRevenueSince(monthAgo)
-                val stockByCat = db.cardDao().getAvailableCountsByCategory()
                 val recentSales = db.saleLogDao().getSalesSince(monthAgo)
                 val aliases = prefs.getAllAliases()
 
-                val stockLines = if (stockByCat.isEmpty()) {
-                    "لا يوجد مخزون متاح"
-                } else {
-                    stockByCat.joinToString("\n") {
-                        val unitPrice = it.category.toDoubleOrNull() ?: 0.0
-                        val catTotal = unitPrice * it.availableCount
-                        "• الفئة: ${it.category} | الكمية: ${it.availableCount} | إجمالي السعر: $catTotal"
-                    }
-                }
-
                 val soldByCat = recentSales.groupBy { it.cardCategory }.entries.joinToString("\n") { (cat, list) ->
                     val sumAmt = list.sumOf { it.amount }
-                    "• الفئة المباعة: $cat | الكمية: ${list.size} | إجمالي السعر: $sumAmt"
+                    "• الفئة: $cat | الكمية: ${list.size} | إجمالي السعر: $sumAmt"
                 }.ifEmpty { "لا توجد مبيعات مسجلة" }
 
                 val aliasLines = if (aliases.isEmpty()) {
@@ -671,7 +842,6 @@ class MainActivity : AppCompatActivity() {
                     append("• اليوم: الكمية $dCount | إجمالي السعر: $dRev\n")
                     append("• الأسبوع: الكمية $wCount | إجمالي السعر: $wRev\n")
                     append("• الشهر: الكمية $mCount | إجمالي السعر: $mRev\n\n")
-                    append("=== المخزون حسب الفئة ===\n$stockLines\n\n")
                     append("=== المبيعات حسب الفئة ===\n$soldByCat\n\n")
                     append("=== الأرقام البديلة ===\n$aliasLines")
                 }
@@ -686,9 +856,7 @@ class MainActivity : AppCompatActivity() {
             val cleanSms = MessageParser.sanitize(rawSms)
             val phone = (MessageParser.extractPhone(cleanSms, prefs.phonePattern) ?: fallbackPhone).trim()
             if (phone.isEmpty()) {
-                val msg = "[محاكاة] اكتب رقم الزبون أولاً (مثال: 771234567)."
-                appendOutput(msg)
-                recordLog("محاكاة: لم يُدخل رقم الزبون.")
+                appendOutput("[محاكاة] اكتب رقم الزبون أولاً (مثال: 771234567).")
                 return@launch
             }
 
@@ -702,63 +870,33 @@ class MainActivity : AppCompatActivity() {
             val allowed = prefs.getAllowedCategories()
 
             if (category !in allowed) {
-                val msg = "[محاكاة] الفئة ($category) غير مسموحة. المسموح: ${allowed.joinToString()}"
-                appendOutput(msg)
-                recordLog("محاكاة: فئة غير مسموحة ($category).")
+                appendOutput("[محاكاة] الفئة ($category) غير مسموحة. المسموح: ${allowed.joinToString()}")
                 return@launch
             }
 
-            val nextCard = withContext(Dispatchers.IO) {
-                db.cardDao().getNextAvailableCard(category)
-            }
-            if (nextCard == null) {
+            val localList = categoryCardsCache[category]
+            val localCard = localList?.firstOrNull()
+            val dbCard = withContext(Dispatchers.IO) { db.cardDao().getNextAvailableCard(category) }
+            val chosenCode = localCard ?: dbCard?.code
+
+            if (chosenCode == null) {
                 val alertMsg = "لا يوجد كرت متاح في فئة $category للرقم $phone"
-                NotificationHelper.showAlert(
-                    this@MainActivity,
-                    "نفاد المخزون",
-                    alertMsg,
-                    notificationId = 2010
-                )
+                NotificationHelper.showAlert(this@MainActivity, "نفاد المخزون", alertMsg, notificationId = 2010)
                 appendOutput("[محاكاة] $alertMsg")
-                recordLog("تنبيه: نفاد كروت فئة $category.")
                 return@launch
             }
 
-            val summaries = withContext(Dispatchers.IO) {
-                db.cardDao().getAvailableCountsByCategory()
-            }
-            val currentCount = summaries.firstOrNull { it.category == category }?.availableCount ?: 0
-            val remainingAfter = (currentCount - 1).coerceAtLeast(0)
-            val lowStockAlert = if (remainingAfter <= prefs.lowStockThreshold) {
-                val text = "فئة $category متبقي فيها $remainingAfter كرت فقط!"
-                NotificationHelper.showAlert(
-                    this@MainActivity,
-                    "تنبيه انخفاض المخزون",
-                    text,
-                    notificationId = 2011
-                )
-                recordLog("تنبيه: انخفاض مخزون فئة $category ($remainingAfter متبقي).")
-                "\nتنبيه: $text"
-            } else {
-                ""
-            }
-
+            val remainingAfter = ((localList?.size ?: 1) - 1).coerceAtLeast(0)
             val replyPreview = MessageParser.buildReplyMessage(
                 amount = category,
-                cardCode = nextCard.code,
+                cardCode = chosenCode,
                 bundles = prefs.getBundlesMap(),
                 template = prefs.replyTemplate,
                 categoryTemplates = prefs.getCategoryTemplatesMap()
             )
 
-            val outputText = buildString {
-                append("الرقم: $phone | الفئة: $category | المتبقي بعد الصرف: $remainingAfter$lowStockAlert\n")
-                append("----------------------------------\n")
-                append(replyPreview)
-            }
-
-            appendOutput(outputText)
-            recordLog("محاكاة: الفئة $category للرقم $phone | الكرت ${nextCard.code}.")
+            appendOutput("الرقم: $phone | الفئة: $category | المتبقي: $remainingAfter\n----------------------------------\n$replyPreview")
+            recordLog("محاكاة: الفئة $category للرقم $phone.")
         }
     }
 
@@ -782,17 +920,7 @@ class MainActivity : AppCompatActivity() {
                 val count = db.saleLogDao().getSalesCountSince(since)
                 val revenue = db.saleLogDao().getTotalRevenueSince(since)
                 val sales = db.saleLogDao().getSalesSince(since).take(15)
-                val stockByCat = db.cardDao().getAvailableCountsByCategory()
-
                 val fmt = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
-                val stockLines = if (stockByCat.isEmpty()) {
-                    "لا يوجد مخزون متاح"
-                } else {
-                    stockByCat.joinToString("\n") {
-                        val unitPrice = it.category.toDoubleOrNull() ?: 0.0
-                        "• الفئة: ${it.category} | الكمية: ${it.availableCount} | إجمالي السعر: ${unitPrice * it.availableCount}"
-                    }
-                }
 
                 val saleLines = if (sales.isEmpty()) {
                     "لا توجد عمليات مسجلة"
@@ -807,16 +935,15 @@ class MainActivity : AppCompatActivity() {
                         )
                         "• الوقت: ${fmt.format(Date(sale.timestamp))}\n" +
                             "  الرد: تم الإرسال | الزبون: ${sale.customerPhone}\n" +
-                            "  الفئة: ${sale.cardCategory} | الكمية: 1 | السعر: ${sale.amount} | الكرت: ${sale.cardCode}\n" +
+                            "  الفئة: ${sale.cardCategory} | الكمية: 1 | السعر: ${sale.amount} | الكود: ${sale.cardCode}\n" +
                             "  النص المرسل: ${sentPreview.replace("\n", " | ")}"
                     }
                 }
 
                 buildString {
                     append("=== تقرير ($label) ===\n")
-                    append("الكمية الإجمالية: $count | إجمالي السعر: $revenue\n\n")
-                    append("=== المخزون حسب الفئة ===\n$stockLines\n\n")
-                    append("=== سجل العمليات ===\n$saleLines")
+                    append("الكمية: $count | إجمالي السعر: $revenue\n\n")
+                    append("=== العمليات ===\n$saleLines")
                 }
             }
             appendOutput(reportText)
@@ -829,12 +956,7 @@ class MainActivity : AppCompatActivity() {
             val since = System.currentTimeMillis() - (30L * 24L * 60L * 60L * 1000L)
             val text = withContext(Dispatchers.IO) {
                 val allSales = db.saleLogDao().getSalesSince(since)
-                val filtered = if (query.isBlank()) {
-                    allSales
-                } else {
-                    allSales.filter { it.customerPhone.contains(query, ignoreCase = true) }
-                }
-
+                val filtered = if (query.isBlank()) allSales else allSales.filter { it.customerPhone.contains(query, ignoreCase = true) }
                 val grouped = filtered.groupBy { it.customerPhone }
                 if (grouped.isEmpty()) {
                     "لا توجد سجلات زبائن مطابقة."
@@ -847,7 +969,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             appendOutput(text)
-            recordLog("الزبائن: عرض سجل الزبائن.")
         }
     }
 
@@ -866,26 +987,6 @@ class MainActivity : AppCompatActivity() {
             eventLogs.removeLast()
         }
         binding.tvEventLog.text = eventLogs.joinToString("\n")
-    }
-
-    private fun showLockDialog() {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            hint = "أدخل الرمز أو النقش"
-        }
-        AlertDialog.Builder(this)
-            .setTitle("قفل التطبيق")
-            .setView(input)
-            .setCancelable(false)
-            .setPositiveButton("دخول") { _, _ ->
-                val entered = input.text.toString().trim()
-                if (!prefs.verifySecret(entered)) {
-                    toast("الرمز أو النقش غير صحيح")
-                    showLockDialog()
-                }
-            }
-            .setNegativeButton("خروج") { _, _ -> finish() }
-            .show()
     }
 
     private fun dayStartMillis(): Long {
