@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:paddingBottom="84dp">
 
-        <!-- شريط علوي موديل 2027 -->
+        <!-- شريط علوي عصري -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -323,7 +323,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 3) قسم المخزن والملفات والفئات (100 و200 وغيرها + تعديل) -->
+                <!-- 3) قسم المخزن والملفات والفئات -->
                 <LinearLayout
                     android:id="@+id/sectionStock"
                     android:layout_width="match_parent"
@@ -768,7 +768,7 @@
         </ScrollView>
     </LinearLayout>
 
-    <!-- شريط التنقل السفلي (5 أقسام رئيسية) -->
+    <!-- شريط التنقل السفلي -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
