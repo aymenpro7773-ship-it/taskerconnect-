@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootCoordinator"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,6 +12,7 @@
         android:orientation="vertical"
         android:paddingBottom="84dp">
 
+        <!-- الشريط العلوي مع الشعار -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -85,6 +86,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- 1) قسم الرئيسية -->
                 <LinearLayout
                     android:id="@+id/sectionHome"
                     android:layout_width="match_parent"
@@ -260,6 +262,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <!-- 2) قسم الإرسال والمحاكاة -->
                 <LinearLayout
                     android:id="@+id/sectionSend"
                     android:layout_width="match_parent"
@@ -329,6 +332,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <!-- 3) قسم المخزن والملفات والفئات -->
                 <LinearLayout
                     android:id="@+id/sectionStock"
                     android:layout_width="match_parent"
@@ -472,6 +476,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <!-- 4) قسم تقرير البيع والاستلام والزبائن والأرشيف -->
                 <LinearLayout
                     android:id="@+id/sectionCustomers"
                     android:layout_width="match_parent"
@@ -536,6 +541,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <!-- 5) قسم الضبط والقوالب والاحتياطات والبصمة والنقش -->
                 <LinearLayout
                     android:id="@+id/sectionSettings"
                     android:layout_width="match_parent"
@@ -704,6 +710,7 @@
                         app:cornerRadius="16dp" />
                 </LinearLayout>
 
+                <!-- صندوق النتائج والإشعارات واللوج -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -770,6 +777,7 @@
         </ScrollView>
     </LinearLayout>
 
+    <!-- شريط التنقل السفلي -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
