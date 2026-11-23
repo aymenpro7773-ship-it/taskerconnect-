@@ -9,17 +9,13 @@
         android:icon="@android:drawable/ic_menu_send"
         android:title="إرسال" />
     <item
-        android:id="@+id/nav_customers"
-        android:icon="@android:drawable/ic_menu_my_calendar"
-        android:title="الزبائن" />
-    <item
         android:id="@+id/nav_stock"
         android:icon="@android:drawable/ic_menu_agenda"
         android:title="المخزن" />
     <item
-        android:id="@+id/nav_archive"
+        android:id="@+id/nav_customers"
         android:icon="@android:drawable/ic_menu_recent_history"
-        android:title="الأرشيف" />
+        android:title="السجلات" />
     <item
         android:id="@+id/nav_settings"
         android:icon="@android:drawable/ic_menu_preferences"
