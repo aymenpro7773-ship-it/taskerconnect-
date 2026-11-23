@@ -29,6 +29,12 @@ object MessageParser {
         return Regex(phonePattern).find(clean)?.value?.trim()
     }
 
+    fun isJaibSource(senderPhone: String, body: String): Boolean {
+        val s = sanitize(senderPhone).lowercase()
+        val b = sanitize(body).lowercase()
+        return s.contains("jaib") || s.contains("جيب") || b.contains("jaib") || b.contains("جيب")
+    }
+
     fun parse(
         body: String,
         keywordPattern: String = """اضيف\s*(\d+)""",
@@ -49,7 +55,7 @@ object MessageParser {
             lower.contains("300") || cleaned.contains("ثلاثمئة") || cleaned.contains("ثلاثمائة") -> "300"
             lower.contains("200") || cleaned.contains("مئتان") || cleaned.contains("مائتان") -> "200"
             lower.contains("100") || cleaned.contains("مئة") || cleaned.contains("مائة") -> "100"
-            else -> Regex("""\b(\d{2,5})\b""").find(cleaned)?.groupValues?.getOrNull(1)
+            else -> null
         }
 
         val amount = category?.toDoubleOrNull()
@@ -60,10 +66,12 @@ object MessageParser {
         amount: String,
         cardCode: String,
         bundles: Map<String, String> = defaultBundles,
-        template: String = defaultReplyTemplate
+        template: String = defaultReplyTemplate,
+        categoryTemplates: Map<String, String> = emptyMap()
     ): String {
         val bundle = bundles[amount].orEmpty()
-        return template
+        val chosenTemplate = categoryTemplates[amount]?.takeIf { it.isNotBlank() } ?: template
+        return chosenTemplate
             .replace("{amount}", amount)
             .replace("{bundle}", bundle)
             .replace("{card}", cardCode)
