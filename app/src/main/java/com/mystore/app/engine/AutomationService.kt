@@ -50,7 +50,7 @@ class AutomationService : Service() {
             return START_NOT_STICKY
         }
 
-        startForeground(FOREGROUND_ID, buildNotification("يعمل بالخلفية وجاهز لاستقبال رسائل Jaib"))
+        startForeground(FOREGROUND_ID, buildNotification("يعمل بالخلفية وجاهز لاستقبال الرسائل"))
 
         if (action == ACTION_PROCESS_SMS) {
             val sender = intent.getStringExtra(EXTRA_SENDER).orEmpty()
@@ -78,7 +78,7 @@ class AutomationService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("CONNECT NET • يعمل بالخلفية")
             .setContentText(text)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.connect_net_logo)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
