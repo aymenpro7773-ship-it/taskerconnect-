@@ -1,35 +1,30 @@
-package com.mystore.app
+package com.mystore.app.engine
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import android.util.Log
+import com.mystore.app.automation.AppPreferences
 
 class SmsReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
 
-        // احترام حالة الإيقاف اليدوي للخدمة
-        if (!ServiceStateManager.isServiceEnabled(context)) {
-            Log.d("SmsReceiver", "Service is manually disabled; ignoring incoming SMS.")
+        val prefs = AppPreferences(context)
+        if (!prefs.isServiceEnabled) {
             return
         }
 
-        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent) ?: return
-        val groupedBySender = messages.groupBy { it.displayOriginatingAddress ?: "" }
+        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        if (messages.isNullOrEmpty()) return
 
-        for ((sender, pdus) in groupedBySender) {
-            val fullBody = pdus.joinToString(separator = "") { it.messageBody ?: "" }.trim()
-            if (fullBody.isEmpty()) continue
-
-            val serviceIntent = Intent(context, AutomationService::class.java).apply {
-                action = AutomationService.ACTION_PROCESS_SMS
-                putExtra(AutomationService.EXTRA_SENDER, sender)
-                putExtra(AutomationService.EXTRA_BODY, fullBody)
+        val groupedBySender = messages.groupBy { it.originatingAddress.orEmpty() }
+        for ((sender, parts) in groupedBySender) {
+            val fullBody = parts.joinToString(separator = "") { it.messageBody.orEmpty() }.trim()
+            if (fullBody.isNotEmpty()) {
+                AutomationService.enqueueIncomingSms(context, sender, fullBody)
             }
-            context.startService(serviceIntent)
         }
     }
 }
