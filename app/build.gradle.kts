@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.mystore.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.mystore.app"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 3
-        versionName = "3.0"
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
     }
 
     buildTypes {
@@ -26,9 +26,13 @@ android {
         }
     }
 
+    buildFeatures {
+        viewBinding = true
+    }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION.17
-        targetCompatibility = JavaVersion.VERSION.17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
@@ -42,16 +46,11 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.activity:activity-ktx:1.9.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
-    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
 }
-```[span_5](start_span)[span_5](end_span)
-
-هل ظهر لك خيار **`Create new file`** عند الضغط على **`...`** بجانب **`Code`**[span_6](start_span)[span_6](end_span)؟
-
