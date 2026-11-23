@@ -190,14 +190,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun appendOutput(line: String) {
+        private fun appendOutput(line: String) {
         val current = binding.tvOutput.text?.toString().orEmpty()
         binding.tvOutput.text = if (current.isBlank() || current == "لا توجد بيانات معروضة بعد.") {
-
+            line
         } else {
             "$current\n$line"
         }
     }
+
 
     private fun extractPhoneNumber(contactUri: Uri): String? {
         contentResolver.query(
