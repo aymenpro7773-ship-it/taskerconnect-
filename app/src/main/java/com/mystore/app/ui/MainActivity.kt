@@ -73,13 +73,17 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        if (prefs.isServiceEnabled) {
+            AutomationService.startService(this)
+        }
+
         syncServiceStatusUi()
         requestNeededPermissions()
         setupBottomNavigation()
         setupActions()
         loadRulesIntoSettingsFields()
         refreshDashboardSummary()
-        recordLog("تم تشغيل التطبيق بنمط 2027 وتهيئة جميع الأقسام.")
+        recordLog("تم تشغيل التطبيق وتهيئة جميع الأقسام.")
 
         if (prefs.isLockEnabled) {
             triggerBiometricOrSecretLock()
@@ -93,7 +97,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun syncServiceStatusUi() {
         binding.tvServiceStatus.text = if (prefs.isServiceEnabled) {
-            "حالة الخدمة: نشطة"
+            "حالة الخدمة: نشطة (تعمل بالخلفية)"
         } else {
             "حالة الخدمة: متوقفة"
         }
@@ -158,7 +162,7 @@ class MainActivity : AppCompatActivity() {
             prefs.isServiceEnabled = true
             AutomationService.startService(this)
             syncServiceStatusUi()
-            appendOutput("تم تشغيل خدمة الأتمتة.")
+            appendOutput("تم تشغيل خدمة الأتمتة بالخلفية.")
             recordLog("تشغيل خدمة الأتمتة.")
         }
 
@@ -328,7 +332,7 @@ class MainActivity : AppCompatActivity() {
             if (newCat !in currentList) {
                 currentList.add(newCat)
                 prefs.allowedCategoriesCsv = currentList.joinToString(",")
-                binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv.toString())
+                binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv)
             }
             binding.etNewCategory.setText("")
             val msg = "تمت إضافة الفئة ($newCat) إلى قائمة الفئات المسموحة."
@@ -401,7 +405,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun selectCategoryForStock(cat: String) {
-        binding.etStockCategory.setText(cat.toString())
+        binding.etStockCategory.setText(cat)
         lifecycleScope.launch {
             val infoText = withContext(Dispatchers.IO) {
                 val summaries = db.cardDao().getAvailableCountsByCategory()
@@ -411,7 +415,7 @@ class MainActivity : AppCompatActivity() {
                 "فئة $cat: $availableCount كرت متاح$nextCodeInfo"
             }
             appendOutput(infoText)
-            recordLog("اختيار فئة $cat في قسم المخزن والملفات ($infoText).")
+            recordLog("اختيار فئة $cat في قسم المخزن ($infoText).")
         }
     }
 
@@ -554,6 +558,7 @@ class MainActivity : AppCompatActivity() {
                 val mCount = db.saleLogDao().getSalesCountSince(monthAgo)
                 val mRev = db.saleLogDao().getTotalRevenueSince(monthAgo)
                 val stockByCat = db.cardDao().getAvailableCountsByCategory()
+                val aliases = prefs.getAllAliases()
 
                 val stockLines = if (stockByCat.isEmpty()) {
                     "لا يوجد مخزون متاح"
@@ -561,12 +566,19 @@ class MainActivity : AppCompatActivity() {
                     stockByCat.joinToString("\n") { "• فئة ${it.category}: ${it.availableCount} كرت" }
                 }
 
+                val aliasLines = if (aliases.isEmpty()) {
+                    "لا توجد أرقام بديلة محفوظة"
+                } else {
+                    aliases.entries.joinToString("\n") { "• ${it.key} -> ${it.value}" }
+                }
+
                 buildString {
                     append("=== تقرير البيع والاستلام والإجماليات ===\n")
                     append("• اليوم: $dCount عملية | الإجمالي: $dRev\n")
                     append("• الأسبوع: $wCount عملية | الإجمالي: $wRev\n")
                     append("• الشهر: $mCount عملية | الإجمالي: $mRev\n")
-                    append("--- المخزون والاستلام الحالي ---\n$stockLines")
+                    append("--- المخزون والاستلام الحالي ---\n$stockLines\n")
+                    append("--- الأرقام البديلة المحفوظة ---\n$aliasLines")
                 }
             }
             appendOutput(summaryText)
@@ -577,8 +589,9 @@ class MainActivity : AppCompatActivity() {
     private fun runSimulation(rawSms: String, fallbackPhone: String) {
         lifecycleScope.launch {
             val cleanSms = MessageParser.sanitize(rawSms)
+            val sampleInput = if (cleanSms.isBlank()) "اضيف 100 770000000 jaib" else cleanSms
             val parsed = MessageParser.parse(
-                body = cleanSms,
+                body = sampleInput,
                 keywordPattern = prefs.keywordPattern,
                 phonePattern = prefs.phonePattern
             )
@@ -587,7 +600,7 @@ class MainActivity : AppCompatActivity() {
             val allowed = prefs.getAllowedCategories()
 
             if (category.isEmpty() || phone.isEmpty()) {
-                val msg = "[محاكاة] تعذر استخراج الفئة أو رقم العميل من النص: $cleanSms"
+                val msg = "[محاكاة] أدخل فئة ورقم عميل مثل: اضيف 100 771234567"
                 appendOutput(msg)
                 recordLog(msg)
                 return@launch
@@ -638,7 +651,8 @@ class MainActivity : AppCompatActivity() {
                 amount = category,
                 cardCode = nextCard.code,
                 bundles = prefs.getBundlesMap(),
-                template = prefs.replyTemplate
+                template = prefs.replyTemplate,
+                categoryTemplates = prefs.getCategoryTemplatesMap()
             )
 
             val outputText = buildString {
@@ -675,7 +689,7 @@ class MainActivity : AppCompatActivity() {
                 val sales = db.saleLogDao().getSalesSince(since).take(15)
                 val stockByCat = db.cardDao().getAvailableCountsByCategory()
 
-                val fmt = SimpleDateFormat("MM/dd HH:mm", Locale.getDefault())
+                val fmt = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
                 val stockLines = if (stockByCat.isEmpty()) {
                     "لا يوجد مخزون متاح"
                 } else {
@@ -685,15 +699,25 @@ class MainActivity : AppCompatActivity() {
                 val saleLines = if (sales.isEmpty()) {
                     "لا توجد عمليات مسجلة"
                 } else {
-                    sales.joinToString("\n") {
-                        "• ${fmt.format(Date(it.timestamp))} | ${it.customerPhone} | فئة ${it.cardCategory} | ${it.cardCode}"
+                    sales.joinToString("\n\n") { sale ->
+                        val sentPreview = MessageParser.buildReplyMessage(
+                            amount = sale.cardCategory,
+                            cardCode = sale.cardCode,
+                            bundles = prefs.getBundlesMap(),
+                            template = prefs.replyTemplate,
+                            categoryTemplates = prefs.getCategoryTemplatesMap()
+                        )
+                        "• الوقت: ${fmt.format(Date(sale.timestamp))}\n" +
+                            "  الزبون: ${sale.customerPhone} | الفئة: ${sale.cardCategory} | الكود: ${sale.cardCode}\n" +
+                            "  الحالة: تم الرد بنجاح\n" +
+                            "  الرسالة المرسلة: ${sentPreview.replace("\n", " | ")}"
                     }
                 }
 
                 buildString {
-                    append("تقرير ($label):\nالعمليات: $count | الإجمالي: $revenue\n")
-                    append("--- المخزون المتاح ---\n$stockLines\n")
-                    append("--- آخر العمليات ---\n$saleLines")
+                    append("تقرير ($label):\nالعمليات: $count | الإجمالي: $revenue\n\n")
+                    append("--- المخزون المتاح ---\n$stockLines\n\n")
+                    append("--- تفاصيل العمليات والردود ---\n$saleLines")
                 }
             }
             appendOutput(reportText)
@@ -727,15 +751,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadRulesIntoSettingsFields() {
-        binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv.toString())
+        binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv)
         binding.etLowStockThreshold.setText(prefs.lowStockThreshold.toString())
-        binding.etKeywordPattern.setText(prefs.keywordPattern.toString())
-        binding.etBundlesCsv.setText(prefs.bundlesCsv.toString())
-        binding.etReplyTemplate.setText(prefs.replyTemplate.toString())
+        binding.etKeywordPattern.setText(prefs.keywordPattern)
+        binding.etBundlesCsv.setText(prefs.bundlesCsv)
+        binding.etReplyTemplate.setText(prefs.replyTemplate)
     }
 
     private fun recordLog(entry: String) {
-        val stamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+        val stamp = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
         eventLogs.addFirst("[$stamp] $entry")
         while (eventLogs.size > 40) {
             eventLogs.removeLast()
