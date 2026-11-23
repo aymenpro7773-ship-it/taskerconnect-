@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:paddingBottom="84dp">
 
-        <!-- شريط علوي عصري -->
+        <!-- شريط علوي موديل 2027 -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -39,9 +39,9 @@
                         android:id="@+id/tvHeaderTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="CONNECT NET • 2027"
+                        android:text="CONNECT NET • ELITE BLUE 2027"
                         android:textColor="#7DD3FC"
-                        android:textSize="17sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -58,7 +58,7 @@
                     android:id="@+id/btnToggleTheme"
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
-                    android:text="المظهر"
+                    android:text="ليلي/نهاري"
                     android:textColor="#FFFFFF"
                     app:backgroundTint="#2563EB"
                     app:cornerRadius="20dp" />
@@ -224,14 +224,33 @@
                             app:cornerRadius="14dp" />
                     </LinearLayout>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnProcessQueue"
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:text="معالجة قائمة الانتظار"
-                        app:backgroundTint="#0284C7"
-                        app:cornerRadius="16dp" />
+                        android:orientation="horizontal"
+                        android:weightSum="2">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnProcessQueue"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:text="معالجة الانتظار"
+                            app:backgroundTint="#0284C7"
+                            app:cornerRadius="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRetryFailed"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:text="إعادة الفاشل"
+                            app:backgroundTint="#0D9488"
+                            app:cornerRadius="16dp" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- 2) قسم الإرسال والمحاكاة -->
@@ -245,7 +264,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="المحاكاة والإرسال اليدوي"
+                        android:text="المحاكاة والإرسال وإعادة المحاولة"
                         android:textColor="#7DD3FC"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -304,9 +323,9 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 3) قسم الزبائن والأرشيف -->
+                <!-- 3) قسم المخزن والملفات والفئات (100 و200 وغيرها + تعديل) -->
                 <LinearLayout
-                    android:id="@+id/sectionCustomers"
+                    android:id="@+id/sectionStock"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
@@ -315,18 +334,78 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="الزبائن والأرشيف"
+                        android:text="المخزن والملفات وتعديل الفئات"
                         android:textColor="#7DD3FC"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal"
+                        android:weightSum="4">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCat100"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:text="100"
+                            app:backgroundTint="#1E40AF"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCat200"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:text="200"
+                            app:backgroundTint="#1E40AF"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCat500"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:text="500"
+                            app:backgroundTint="#1E40AF"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCat1000"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="1000"
+                            app:backgroundTint="#1E40AF"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+
                     <EditText
-                        android:id="@+id/etSearchCustomer"
+                        android:id="@+id/etStockCategory"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:background="#0D1B36"
-                        android:hint="بحث برقم الزبون..."
+                        android:hint="الفئة الحالية للتعديل أو الإضافة (مثال: 100 أو 200)"
+                        android:padding="14dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#64748B" />
+
+                    <EditText
+                        android:id="@+id/etBulkCodes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
+                        android:gravity="top"
+                        android:hint="الأكواد / محتوى ملف الفئة (كود بكل سطر)..."
+                        android:lines="4"
                         android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
@@ -339,75 +418,25 @@
                         android:weightSum="2">
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnLoadCustomers"
+                            android:id="@+id/btnAddCodes"
                             android:layout_width="0dp"
                             android:layout_height="46dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:text="سجل الزبائن"
-                            app:backgroundTint="#1D4ED8"
+                            android:text="إضافة الأكواد"
+                            app:backgroundTint="#2563EB"
                             app:cornerRadius="16dp" />
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnLoadArchive"
+                            android:id="@+id/btnEditCategoryStock"
                             android:layout_width="0dp"
                             android:layout_height="46dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:text="الأرشيف"
+                            android:text="تعديل ملف الفئة"
                             app:backgroundTint="#0284C7"
                             app:cornerRadius="16dp" />
                     </LinearLayout>
-                </LinearLayout>
-
-                <!-- 4) قسم المخزن والملفات -->
-                <LinearLayout
-                    android:id="@+id/sectionStock"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="المخزون والملفات"
-                        android:textColor="#7DD3FC"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <EditText
-                        android:id="@+id/etStockCategory"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:background="#0D1B36"
-                        android:hint="الفئة (مثال: 500)"
-                        android:padding="14dp"
-                        android:textColor="#FFFFFF"
-                        android:textColorHint="#64748B" />
-
-                    <EditText
-                        android:id="@+id/etBulkCodes"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:background="#0D1B36"
-                        android:gravity="top"
-                        android:hint="الصق الأكواد هنا (كود بكل سطر)..."
-                        android:lines="4"
-                        android:padding="14dp"
-                        android:textColor="#FFFFFF"
-                        android:textColorHint="#64748B" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnAddCodes"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="10dp"
-                        android:text="إضافة الأكواد للمخزن"
-                        app:backgroundTint="#2563EB"
-                        app:cornerRadius="16dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -438,7 +467,72 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 5) قسم الضبط والقفل -->
+                <!-- 4) قسم تقرير البيع والاستلام والزبائن والأرشيف -->
+                <LinearLayout
+                    android:id="@+id/sectionCustomers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="تقرير البيع والاستلام والزبائن والأرشيف"
+                        android:textColor="#7DD3FC"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/etSearchCustomer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
+                        android:hint="بحث برقم الزبون..."
+                        android:padding="14dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#64748B" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal"
+                        android:weightSum="3">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSalesReceiptReport"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:text="بيع واستلام"
+                            app:backgroundTint="#0D9488"
+                            app:cornerRadius="14dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLoadCustomers"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:text="الزبائن"
+                            app:backgroundTint="#1D4ED8"
+                            app:cornerRadius="14dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLoadArchive"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_weight="1"
+                            android:text="الأرشيف"
+                            app:backgroundTint="#0284C7"
+                            app:cornerRadius="14dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 5) قسم الضبط والقوالب والاحتياطات والبصمة والنقش -->
                 <LinearLayout
                     android:id="@+id/sectionSettings"
                     android:layout_width="match_parent"
@@ -449,7 +543,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="الضبط والقفل والأمان"
+                        android:text="الضبط والقوالب والاحتياطات والأمان"
                         android:textColor="#7DD3FC"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -545,8 +639,17 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="10dp"
-                        android:text="حفظ الإعدادات والقواعد"
+                        android:text="حفظ القواعد والخصائص"
                         app:backgroundTint="#2563EB"
+                        app:cornerRadius="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOverlayPermission"
+                        android:layout_width="match_parent"
+                        android:layout_height="46dp"
+                        android:layout_marginTop="10dp"
+                        android:text="إذن الظهور فوق التطبيقات / الاحتياطات"
+                        app:backgroundTint="#0F766E"
                         app:cornerRadius="16dp" />
 
                     <EditText
@@ -573,7 +676,7 @@
                             android:layout_height="46dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:text="تفعيل القفل"
+                            android:text="تفعيل النقش/الرمز"
                             app:backgroundTint="#0D9488"
                             app:cornerRadius="16dp" />
 
@@ -598,7 +701,7 @@
                         app:cornerRadius="16dp" />
                 </LinearLayout>
 
-                <!-- صندوق النتائج واللوج والإشعارات -->
+                <!-- صندوق النتائج والإشعارات واللوج -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
