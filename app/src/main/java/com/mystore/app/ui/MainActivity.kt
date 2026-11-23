@@ -1,9 +1,12 @@
 package com.mystore.app.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
 import android.view.View
 import android.widget.EditText
@@ -11,6 +14,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.mystore.app.R
@@ -26,6 +31,8 @@ import com.mystore.app.engine.SmsSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,6 +49,22 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { }
 
+    private val importCodesLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            importCodesFromUri(uri)
+        }
+    }
+
+    private val exportReportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri: Uri? ->
+        if (uri != null) {
+            exportCurrentReportToUri(uri)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = AppPreferences(this)
         AppPreferences.applyTheme(prefs.isDarkMode)
@@ -56,10 +79,10 @@ class MainActivity : AppCompatActivity() {
         setupActions()
         loadRulesIntoSettingsFields()
         refreshDashboardSummary()
-        recordLog("تم تشغيل التطبيق وتهيئة الأقسام.")
+        recordLog("تم تشغيل التطبيق بنمط 2027 وتهيئة جميع الأقسام.")
 
-        if (prefs.isLockEnabled && prefs.hasSecret()) {
-            showLockDialog()
+        if (prefs.isLockEnabled) {
+            triggerBiometricOrSecretLock()
         }
     }
 
@@ -97,9 +120,8 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             binding.sectionHome.visibility = View.GONE
             binding.sectionSend.visibility = View.GONE
-            binding.sectionCustomers.visibility = View.GONE
             binding.sectionStock.visibility = View.GONE
-            binding.sectionArchive.visibility = View.GONE
+            binding.sectionCustomers.visibility = View.GONE
             binding.sectionSettings.visibility = View.GONE
 
             when (item.itemId) {
@@ -108,14 +130,10 @@ class MainActivity : AppCompatActivity() {
                     refreshDashboardSummary()
                 }
                 R.id.nav_send -> binding.sectionSend.visibility = View.VISIBLE
+                R.id.nav_stock -> binding.sectionStock.visibility = View.VISIBLE
                 R.id.nav_customers -> {
                     binding.sectionCustomers.visibility = View.VISIBLE
-                    loadCustomersReport("")
-                }
-                R.id.nav_stock -> binding.sectionStock.visibility = View.VISIBLE
-                R.id.nav_archive -> {
-                    binding.sectionArchive.visibility = View.VISIBLE
-                    loadSalesReport(1, "يومي")
+                    loadSalesAndReceiptSummary()
                 }
                 R.id.nav_settings -> {
                     binding.sectionSettings.visibility = View.VISIBLE
@@ -160,7 +178,23 @@ class MainActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val res = withContext(Dispatchers.IO) { processor.processPendingQueue() }
                 appendOutput(res)
-                recordLog("قائمة الانتظار: $res")
+                recordLog("معالجة الانتظار: $res")
+                refreshDashboardSummary()
+            }
+        }
+
+        binding.btnRetryFailed.setOnClickListener {
+            lifecycleScope.launch {
+                val res = withContext(Dispatchers.IO) { processor.processPendingQueue() }
+                val msg = "إعادة محاولة الفاشل/المنتظر: $res"
+                NotificationHelper.showAlert(
+                    this@MainActivity,
+                    "إعادة الإرسال والاحتياطات",
+                    msg,
+                    notificationId = 2027
+                )
+                appendOutput(msg)
+                recordLog(msg)
                 refreshDashboardSummary()
             }
         }
@@ -179,38 +213,69 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             lifecycleScope.launch {
-                val result = withContext(Dispatchers.IO) {
+                val firstTry = withContext(Dispatchers.IO) {
                     SmsSender.sendSms(this@MainActivity, phone, msg)
                 }
-                val statusText = if (result.success) {
+                val finalResult = if (firstTry.success) {
+                    firstTry
+                } else {
+                    withContext(Dispatchers.IO) {
+                        SmsSender.sendSms(this@MainActivity, phone, msg)
+                    }
+                }
+                val statusText = if (finalResult.success) {
                     "تم الإرسال الفعلي بنجاح إلى $phone"
                 } else {
-                    "فشل الإرسال إلى $phone: ${result.error ?: "خطأ غير معروف"}"
+                    "فشل الإرسال إلى $phone بعد إعادة المحاولة: ${finalResult.error ?: "خطأ غير معروف"}"
                 }
+                NotificationHelper.showAlert(
+                    this@MainActivity,
+                    "حالة إرسال SMS",
+                    statusText,
+                    notificationId = 2028
+                )
                 appendOutput(statusText)
                 recordLog(statusText)
             }
         }
 
-        binding.btnLoadCustomers.setOnClickListener {
-            val query = binding.etSearchCustomer.text.toString().trim()
-            loadCustomersReport(query)
-        }
+        binding.btnCat100.setOnClickListener { selectCategoryForStock("100") }
+        binding.btnCat200.setOnClickListener { selectCategoryForStock("200") }
+        binding.btnCat500.setOnClickListener { selectCategoryForStock("500") }
+        binding.btnCat1000.setOnClickListener { selectCategoryForStock("1000") }
 
         binding.btnAddCodes.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim()
             val rawLines = binding.etBulkCodes.text.toString()
             if (category.isEmpty() || rawLines.isBlank()) {
-                toast("حدد الفئة والصق الأكواد")
+                toast("حدد الفئة وأدخل الأكواد")
                 return@setOnClickListener
             }
             val codes = rawLines.split(Regex("\\r?\\n"))
                 .map { it.trim() }
                 .filter { it.isNotEmpty() }
+            insertCodesList(category, codes, clearBox = true)
+        }
 
+        binding.btnEditCategoryStock.setOnClickListener {
+            val category = binding.etStockCategory.text.toString().trim()
+            val rawLines = binding.etBulkCodes.text.toString()
+            if (category.isEmpty()) {
+                toast("حدد الفئة أولاً لتعديل ملفها")
+                return@setOnClickListener
+            }
+            val newCodes = rawLines.split(Regex("\\r?\\n"))
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+            if (newCodes.isEmpty()) {
+                toast("أدخل الأكواد الجديدة لتحديث ملف الفئة $category")
+                return@setOnClickListener
+            }
             lifecycleScope.launch {
-                val inserted = withContext(Dispatchers.IO) {
-                    val entities = codes.map { code ->
+                val addedCount = withContext(Dispatchers.IO) {
+                    val existing = db.cardDao().getAvailableCardsByCategory(category)
+                    db.cardDao().deleteCards(existing)
+                    val entities = newCodes.map { code ->
                         CardEntity(
                             category = category,
                             code = code,
@@ -220,16 +285,38 @@ class MainActivity : AppCompatActivity() {
                     }
                     db.cardDao().insertCards(entities).count { it > 0 }
                 }
-                binding.etBulkCodes.setText("")
-                val msg = "تمت إضافة $inserted كرت جديد إلى فئة $category."
+                val msg = "تم تحديث ملف فئة $category بإجمالي $addedCount كرت متاح."
                 appendOutput(msg)
                 recordLog(msg)
                 refreshDashboardSummary()
             }
         }
 
+        binding.btnImportFile.setOnClickListener {
+            val category = binding.etStockCategory.text.toString().trim()
+            if (category.isEmpty()) {
+                toast("حدد الفئة أولاً قبل استيراد الملف")
+                return@setOnClickListener
+            }
+            importCodesLauncher.launch(arrayOf("text/plain", "text/csv", "*/*"))
+        }
+
+        binding.btnExportFile.setOnClickListener {
+            val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+            exportReportLauncher.launch("connect_net_2027_$stamp.txt")
+        }
+
+        binding.btnSalesReceiptReport.setOnClickListener {
+            loadSalesAndReceiptSummary()
+        }
+
+        binding.btnLoadCustomers.setOnClickListener {
+            val query = binding.etSearchCustomer.text.toString().trim()
+            loadCustomersReport(query)
+        }
+
         binding.btnLoadArchive.setOnClickListener {
-            loadSalesReport(7, "آخر 7 أيام")
+            loadSalesReport(7, "الأرشيف (آخر 7 أيام)")
         }
 
         binding.btnAddCategory.setOnClickListener {
@@ -268,6 +355,20 @@ class MainActivity : AppCompatActivity() {
             recordLog(msg)
         }
 
+        binding.btnOverlayPermission.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+                recordLog("فتح إعدادات الظهور فوق التطبيقات.")
+            } else {
+                toast("إذن الظهور فوق التطبيقات مفعّل مسبقاً")
+                recordLog("إذن الظهور فوق التطبيقات مفعّل.")
+            }
+        }
+
         binding.btnSaveLock.setOnClickListener {
             val secret = binding.etNewSecret.text.toString().trim()
             if (secret.length < 4) {
@@ -276,7 +377,7 @@ class MainActivity : AppCompatActivity() {
             }
             prefs.setSecret(secret, "PATTERN")
             binding.etNewSecret.setText("")
-            val msg = "تم تفعيل/تحديث قفل الدخول الداخلي بنجاح."
+            val msg = "تم تفعيل/تحديث قفل النقش أو الرمز بنجاح."
             appendOutput(msg)
             recordLog(msg)
         }
@@ -288,9 +389,186 @@ class MainActivity : AppCompatActivity() {
             recordLog(msg)
         }
 
+        binding.btnBiometricLock.setOnClickListener {
+            prefs.isLockEnabled = true
+            triggerBiometricOrSecretLock()
+            recordLog("تم تشغيل التحقق بالبصمة.")
+        }
+
         binding.btnClearLog.setOnClickListener {
             eventLogs.clear()
             binding.tvEventLog.text = "سجل اللوج فارغ."
+        }
+    }
+
+    private fun selectCategoryForStock(cat: String) {
+        binding.etStockCategory.setText(cat)
+        lifecycleScope.launch {
+            val codesText = withContext(Dispatchers.IO) {
+                db.cardDao().getAvailableCardsByCategory(cat).joinToString("\n") { it.code }
+            }
+            binding.etBulkCodes.setText(codesText)
+            appendOutput("تم تحميل فئة $cat للتعديل أو الإضافة.")
+            recordLog("اختيار فئة $cat في قسم المخزن والملفات.")
+        }
+    }
+
+    private fun insertCodesList(category: String, codes: List<String>, clearBox: Boolean) {
+        if (codes.isEmpty()) {
+            toast("لا توجد أكواد صالحة للإضافة")
+            return
+        }
+        lifecycleScope.launch {
+            val inserted = withContext(Dispatchers.IO) {
+                val entities = codes.map { code ->
+                    CardEntity(
+                        category = category,
+                        code = code,
+                        price = category.toDoubleOrNull() ?: 0.0,
+                        isSold = false
+                    )
+                }
+                db.cardDao().insertCards(entities).count { it > 0 }
+            }
+            if (clearBox) {
+                binding.etBulkCodes.setText("")
+            }
+            val msg = "تمت إضافة $inserted كرت جديد إلى فئة $category."
+            appendOutput(msg)
+            recordLog(msg)
+            refreshDashboardSummary()
+        }
+    }
+
+    private fun importCodesFromUri(uri: Uri) {
+        val category = binding.etStockCategory.text.toString().trim()
+        if (category.isEmpty()) {
+            toast("حدد الفئة أولاً")
+            return
+        }
+        lifecycleScope.launch {
+            val codes = withContext(Dispatchers.IO) {
+                val list = mutableListOf<String>()
+                contentResolver.openInputStream(uri)?.use { input ->
+                    BufferedReader(InputStreamReader(input)).use { reader ->
+                        var line: String? = reader.readLine()
+                        while (line != null) {
+                            val clean = line.trim()
+                            if (clean.isNotEmpty()) {
+                                list.add(clean)
+                            }
+                            line = reader.readLine()
+                        }
+                    }
+                }
+                list
+            }
+            insertCodesList(category, codes, clearBox = false)
+            recordLog("استيراد ملف أكواد لفئة $category (${codes.size} سطر).")
+        }
+    }
+
+    private fun exportCurrentReportToUri(uri: Uri) {
+        val contentToSave = buildString {
+            append("=== CONNECT NET • ELITE BLUE 2027 ===\n")
+            append("التاريخ: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n")
+            append("${binding.tvServiceStatus.text}\n")
+            append("مبيعات اليوم: ${binding.tvTodaySalesCount.text} | إجمالي المخزون: ${binding.tvTotalStockCount.text}\n\n")
+            append("--- النتائج والتقارير ---\n")
+            append("${binding.tvOutput.text}\n\n")
+            append("--- سجل اللوج ---\n")
+            append(binding.tvEventLog.text)
+        }
+        lifecycleScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                try {
+                    contentResolver.openOutputStream(uri)?.use { out ->
+                        out.write(contentToSave.toByteArray(Charsets.UTF_8))
+                        out.flush()
+                    }
+                    true
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            val msg = if (ok) {
+                "تم تصدير التقرير واللوج بنجاح إلى الملف."
+            } else {
+                "تعذر تصدير الملف."
+            }
+            appendOutput(msg)
+            recordLog(msg)
+        }
+    }
+
+    private fun triggerBiometricOrSecretLock() {
+        val biometricManager = BiometricManager.from(this)
+        val canAuth = biometricManager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.BIOMETRIC_WEAK
+        )
+        if (canAuth == BiometricManager.BIOMETRIC_SUCCESS) {
+            val executor = ContextCompat.getMainExecutor(this)
+            val prompt = BiometricPrompt(
+                this,
+                executor,
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                        super.onAuthenticationSucceeded(result)
+                        toast("تم التحقق بالبصمة بنجاح")
+                    }
+
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                        super.onAuthenticationError(errorCode, errString)
+                        if (prefs.hasSecret()) {
+                            showLockDialog()
+                        }
+                    }
+                }
+            )
+            val info = BiometricPrompt.PromptInfo.Builder()
+                .setTitle("قفل التطبيق بالبصمة")
+                .setSubtitle("أكد هويتك للمتابعة")
+                .setNegativeButtonText("استخدام النقش/الرمز")
+                .build()
+            prompt.authenticate(info)
+        } else if (prefs.hasSecret()) {
+            showLockDialog()
+        }
+    }
+
+    private fun loadSalesAndReceiptSummary() {
+        lifecycleScope.launch {
+            val now = System.currentTimeMillis()
+            val dayAgo = now - (24L * 60L * 60L * 1000L)
+            val weekAgo = now - (7L * 24L * 60L * 60L * 1000L)
+            val monthAgo = now - (30L * 24L * 60L * 60L * 1000L)
+
+            val summaryText = withContext(Dispatchers.IO) {
+                val dCount = db.saleLogDao().getSalesCountSince(dayAgo)
+                val dRev = db.saleLogDao().getTotalRevenueSince(dayAgo)
+                val wCount = db.saleLogDao().getSalesCountSince(weekAgo)
+                val wRev = db.saleLogDao().getTotalRevenueSince(weekAgo)
+                val mCount = db.saleLogDao().getSalesCountSince(monthAgo)
+                val mRev = db.saleLogDao().getTotalRevenueSince(monthAgo)
+                val stockByCat = db.cardDao().getAvailableCountsByCategory()
+
+                val stockLines = if (stockByCat.isEmpty()) {
+                    "لا يوجد مخزون متاح"
+                } else {
+                    stockByCat.joinToString("\n") { "• فئة ${it.category}: ${it.availableCount} كرت" }
+                }
+
+                buildString {
+                    append("=== تقرير البيع والاستلام والإجماليات ===\n")
+                    append("• اليوم: $dCount عملية | الإجمالي: $dRev\n")
+                    append("• الأسبوع: $wCount عملية | الإجمالي: $wRev\n")
+                    append("• الشهر: $mCount عملية | الإجمالي: $mRev\n")
+                    append("--- المخزون والاستلام الحالي ---\n$stockLines")
+                }
+            }
+            appendOutput(summaryText)
+            recordLog("عرض تقرير البيع والاستلام والإجماليات.")
         }
     }
 
