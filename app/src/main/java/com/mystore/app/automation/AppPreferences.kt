@@ -3,6 +3,7 @@ package com.mystore.app.automation
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
+import com.mystore.app.engine.MessageParser
 
 class AppPreferences(context: Context) {
 
@@ -16,6 +17,10 @@ class AppPreferences(context: Context) {
     var isDarkMode: Boolean
         get() = prefs.getBoolean("dark_mode", true)
         set(value) = prefs.edit().putBoolean("dark_mode", value).apply()
+
+    var requireJaibSender: Boolean
+        get() = prefs.getBoolean("require_jaib_sender", true)
+        set(value) = prefs.edit().putBoolean("require_jaib_sender", value).apply()
 
     var allowedCategoriesCsv: String
         get() = prefs.getString("allowed_categories", "100,200,300,500,1000,2000")
@@ -35,16 +40,20 @@ class AppPreferences(context: Context) {
         set(value) = prefs.edit().putString("phone_pattern", value).apply()
 
     var bundlesCsv: String
-        get() = prefs.getString("bundles_csv", "100:350ميجا,500:2جيجا")
-            ?: "100:350ميجا,500:2جيجا"
+        get() = prefs.getString(
+            "bundles_csv",
+            "100:350ميجا,200:700ميجا,300:1100ميجا,500:2جيجا,1000:3جيجا,2000:7جيجا"
+        ) ?: "100:350ميجا,200:700ميجا,300:1100ميجا,500:2جيجا,1000:3جيجا,2000:7جيجا"
         set(value) = prefs.edit().putString("bundles_csv", value).apply()
 
     var replyTemplate: String
-        get() = prefs.getString(
-            "reply_template",
-            "تم شحن فئة {amount} ({bundle}) بنجاح. الكرت: {card}"
-        ) ?: "تم شحن فئة {amount} ({bundle}) بنجاح. الكرت: {card}"
+        get() = prefs.getString("reply_template", MessageParser.defaultReplyTemplate)
+            ?: MessageParser.defaultReplyTemplate
         set(value) = prefs.edit().putString("reply_template", value).apply()
+
+    var categoryTemplatesRaw: String
+        get() = prefs.getString("category_templates_raw", "") ?: ""
+        set(value) = prefs.edit().putString("category_templates_raw", value).apply()
 
     var isLockEnabled: Boolean
         get() = prefs.getBoolean("lock_enabled", false)
@@ -75,17 +84,38 @@ class AppPreferences(context: Context) {
     }
 
     fun getBundlesMap(): Map<String, String> {
-        if (bundlesCsv.isBlank()) return emptyMap()
-        return bundlesCsv.split(",")
-            .mapNotNull { entry ->
+        val merged = MessageParser.defaultBundles.toMutableMap()
+        if (bundlesCsv.isNotBlank()) {
+            bundlesCsv.split(",").forEach { entry ->
                 val parts = entry.split(":", limit = 2)
-                if (parts.size == 2 && parts[0].isNotBlank()) {
-                    parts[0].trim() to parts[1].trim()
-                } else {
-                    null
+                if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
+                    merged[parts[0].trim()] = parts[1].trim()
                 }
             }
-            .toMap()
+        }
+        return merged
+    }
+
+    fun setCategoryTemplate(category: String, template: String) {
+        val map = getCategoryTemplatesMap().toMutableMap()
+        val cleanCat = category.trim()
+        if (cleanCat.isEmpty()) return
+        if (template.isBlank()) {
+            map.remove(cleanCat)
+        } else {
+            map[cleanCat] = template.trim()
+        }
+        categoryTemplatesRaw = map.entries.joinToString("||") { "${it.key}==${it.value.replace("\n", "\\n")}" }
+    }
+
+    fun getCategoryTemplatesMap(): Map<String, String> {
+        if (categoryTemplatesRaw.isBlank()) return emptyMap()
+        return categoryTemplatesRaw.split("||").mapNotNull { item ->
+            val parts = item.split("==", limit = 2)
+            if (parts.size == 2 && parts[0].isNotBlank()) {
+                parts[0].trim() to parts[1].replace("\\n", "\n")
+            } else null
+        }.toMap()
     }
 
     fun setExplicitAlias(sourceKey: String, verifiedFullPhone: String?) {
@@ -94,6 +124,10 @@ class AppPreferences(context: Context) {
         val editor = prefs.edit()
         if (cleanKey.isNotEmpty() && isValidYemeniPhone(cleanTarget)) {
             editor.putString("explicit_alias_$cleanKey", cleanTarget)
+            val allKeys = (prefs.getString("alias_keys_csv", "") ?: "")
+                .split(",").map { it.trim() }.filter { it.isNotEmpty() }.toMutableSet()
+            allKeys.add(cleanKey)
+            editor.putString("alias_keys_csv", allKeys.joinToString(","))
         } else if (cleanKey.isNotEmpty()) {
             editor.remove("explicit_alias_$cleanKey")
         }
@@ -105,6 +139,17 @@ class AppPreferences(context: Context) {
         if (cleanKey.isEmpty()) return null
         val target = prefs.getString("explicit_alias_$cleanKey", null)
         return if (isValidYemeniPhone(target)) target else null
+    }
+
+    fun getAllAliases(): Map<String, String> {
+        val keys = (prefs.getString("alias_keys_csv", "") ?: "")
+            .split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val result = linkedMapOf<String, String>()
+        keys.forEach { k ->
+            val v = getExplicitAlias(k)
+            if (v != null) result[k] = v
+        }
+        return result
     }
 
     fun isValidYemeniPhone(phone: String?): Boolean {
