@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- الثيم النهاري 2027 (أبيض واضح ونصوص داكنة عالية الوضوح) -->
     <style name="Theme.MyStore" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">#0284C7</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -10,7 +9,6 @@
         <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <!-- الثيم الليلي 2027 (أسود صريح ونصوص بيضاء عالية الوضوح) -->
     <style name="Theme.MyStore.Night" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">#38BDF8</item>
         <item name="colorOnPrimary">#000000</item>
@@ -20,7 +18,6 @@
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <!-- ألوان النهار -->
     <color name="app_bg">#FFFFFF</color>
     <color name="card_bg">#F8FAFC</color>
     <color name="card_stroke">#E2E8F0</color>
@@ -31,7 +28,6 @@
     <color name="text_hint">#64748B</color>
     <color name="accent_primary">#0284C7</color>
 
-    <!-- ألوان الليل -->
     <color name="night_app_bg">#000000</color>
     <color name="night_card_bg">#0B101B</color>
     <color name="night_card_stroke">#1E293B</color>
