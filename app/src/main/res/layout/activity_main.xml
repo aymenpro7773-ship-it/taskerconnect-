@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:paddingBottom="84dp">
 
-        <!-- شريط علوي موديل 2027 مع الشعار -->
+        <!-- الشريط العلوي مع الشعار -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
