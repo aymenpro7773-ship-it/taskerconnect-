@@ -4,7 +4,7 @@
     android:id="@+id/rootCoordinator"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/app_bg">
+    android:background="@color/night_app_bg">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,12 +13,13 @@
         android:paddingBottom="84dp">
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/headerCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            app:cardBackgroundColor="@color/card_bg"
+            app:cardBackgroundColor="@color/night_card_bg"
             app:cardCornerRadius="22dp"
-            app:strokeColor="@color/card_stroke"
+            app:strokeColor="@color/night_card_stroke"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -48,7 +49,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="CONNECT NET • ELITE 2027"
-                        android:textColor="@color/accent_primary"
+                        android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -58,7 +59,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="حالة الخدمة: متوقفة"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/night_text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
 
@@ -279,8 +280,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="المحاكاة والإرسال وإعادة المحاولة"
-                        android:textColor="@color/accent_primary"
+                        android:text="المحاكاة السريعة والإرسال"
+                        android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -289,25 +290,25 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
-                        android:hint="رقم المستلم (مثال: 771234567)"
+                        android:background="@color/night_input_bg"
+                        android:hint="اكتب رقم الزبون (مثال: 771234567)"
                         android:inputType="phone"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <EditText
                         android:id="@+id/etMessage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:gravity="top"
-                        android:hint="نص الرسالة / المحاكاة (مثال: اضيف 500 771234567 jaib)"
-                        android:lines="3"
+                        android:hint="اختياري: اكتب الفئة فقط (مثل 100 أو 500) أو نص رسالة"
+                        android:lines="2"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -322,7 +323,7 @@
                             android:layout_height="48dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:text="محاكاة"
+                            android:text="محاكاة (وصل طلبك)"
                             android:textColor="#FFFFFF"
                             app:backgroundTint="#2563EB"
                             app:cornerRadius="16dp" />
@@ -351,8 +352,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="المخزن والملفات وتعديل الفئات"
-                        android:textColor="@color/accent_primary"
+                        android:text="المخزن والملفات وإدارة الفئات"
+                        android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -412,24 +413,24 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
-                        android:hint="الفئة الحالية للتعديل أو الإضافة (مثال: 100 أو 200)"
+                        android:background="@color/night_input_bg"
+                        android:hint="الفئة الحالية (مثال: 100 أو 200)"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <EditText
                         android:id="@+id/etBulkCodes"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:gravity="top"
-                        android:hint="الأكواد / محتوى ملف الفئة (كود بكل سطر)..."
+                        android:hint="أدخل الأكواد (كود بكل سطر)..."
                         android:lines="4"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -455,7 +456,7 @@
                             android:layout_height="46dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:text="تعديل ملف الفئة"
+                            android:text="عرض/تحديث الفئة"
                             android:textColor="#FFFFFF"
                             app:backgroundTint="#0284C7"
                             app:cornerRadius="16dp" />
@@ -485,7 +486,7 @@
                             android:layout_height="46dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:text="تصدير ملف"
+                            android:text="تصدير ملف الفئة"
                             android:textColor="#FFFFFF"
                             app:backgroundTint="#1E40AF"
                             app:cornerRadius="16dp" />
@@ -504,7 +505,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="تقرير البيع والاستلام والزبائن والأرشيف"
-                        android:textColor="@color/accent_primary"
+                        android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -513,11 +514,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="بحث برقم الزبون..."
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -564,7 +565,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
                         android:text="إضافة / حفظ رقم بديل للزبون"
-                        android:textColor="@color/accent_primary"
+                        android:textColor="@color/night_accent_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
@@ -573,24 +574,24 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@color/input_bg"
-                        android:hint="المفتاح أو الرقم المختصر الظاهر (مثال: 775137807 أو 617)"
+                        android:background="@color/night_input_bg"
+                        android:hint="المفتاح أو الرقم الظاهر (مثال: 775137807 أو 617)"
                         android:inputType="number"
                         android:padding="12dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <EditText
                         android:id="@+id/etCustomerAliasPhone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="الرقم البديل الكامل (مثال: 771234567)"
                         android:inputType="phone"
                         android:padding="12dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSaveCustomerAlias"
@@ -615,7 +616,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="الضبط والقوالب والاحتياطات والأمان"
-                        android:textColor="@color/accent_primary"
+                        android:textColor="@color/night_accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -624,11 +625,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="الفئات المسموحة: 100,200,300,500,1000,2000"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -643,11 +644,11 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:background="@color/input_bg"
+                            android:background="@color/night_input_bg"
                             android:hint="فئة جديدة (مثال: 1500)"
                             android:padding="14dp"
-                            android:textColor="@color/text_primary"
-                            android:textColorHint="@color/text_hint" />
+                            android:textColor="@color/night_text_primary"
+                            android:textColorHint="@color/night_text_hint" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnAddCategory"
@@ -664,54 +665,54 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="حد تنبيه انخفاض المخزون"
                         android:inputType="number"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <EditText
                         android:id="@+id/etKeywordPattern"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="نمط الكلمة"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <EditText
                         android:id="@+id/etBundlesCsv"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="الباقات (مثال: 100:350ميجا,200:700ميجا)"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <EditText
                         android:id="@+id/etReplyTemplate"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:gravity="top"
                         android:hint="قالب الرد العام ({amount} {bundle} {card})"
                         android:lines="2"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="قالب رد مخصص لفئة محددة"
-                        android:textColor="@color/accent_primary"
+                        android:textColor="@color/night_accent_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
@@ -720,25 +721,25 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="رقم الفئة (مثال: 200 أو 500)"
                         android:inputType="number"
                         android:padding="12dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <EditText
                         android:id="@+id/etCategoryTemplateText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:gravity="top"
                         android:hint="نص القالب لهذه الفئة ({amount} {bundle} {card})"
                         android:lines="2"
                         android:padding="12dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSaveCategoryTemplate"
@@ -775,11 +776,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:background="@color/input_bg"
+                        android:background="@color/night_input_bg"
                         android:hint="رمز أو نقش الدخول (4 خانات فأكثر)"
                         android:padding="14dp"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_hint" />
+                        android:textColor="@color/night_text_primary"
+                        android:textColorHint="@color/night_text_hint" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -824,13 +825,14 @@
 
                 <!-- صندوق النتائج والإشعارات واللوج -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/resultCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/card_bg"
+                    app:cardBackgroundColor="@color/night_card_bg"
                     app:cardCornerRadius="22dp"
-                    app:strokeColor="@color/card_stroke"
+                    app:strokeColor="@color/night_card_stroke"
                     app:strokeWidth="1dp">
 
                     <LinearLayout
@@ -846,11 +848,12 @@
                             android:orientation="horizontal">
 
                             <TextView
+                                android:id="@+id/tvResultLabel"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="النتائج والإشعارات واللوج"
-                                android:textColor="@color/accent_primary"
+                                android:textColor="@color/night_accent_primary"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
 
@@ -872,7 +875,7 @@
                             android:layout_marginTop="10dp"
                             android:lineSpacingExtra="4dp"
                             android:text="لا توجد بيانات معروضة بعد."
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/night_text_primary"
                             android:textIsSelectable="true"
                             android:textSize="13sp" />
 
@@ -881,11 +884,11 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
-                            android:background="@color/log_bg"
+                            android:background="@color/night_log_bg"
                             android:lineSpacingExtra="3dp"
                             android:padding="12dp"
                             android:text="سجل اللوج فارغ."
-                            android:textColor="@color/text_secondary"
+                            android:textColor="@color/night_text_secondary"
                             android:textIsSelectable="true"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -899,9 +902,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/card_bg"
-        app:itemIconTint="@color/accent_primary"
-        app:itemTextColor="@color/text_primary"
+        android:background="@color/night_card_bg"
+        app:itemIconTint="@color/night_accent_primary"
+        app:itemTextColor="@color/night_text_primary"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
