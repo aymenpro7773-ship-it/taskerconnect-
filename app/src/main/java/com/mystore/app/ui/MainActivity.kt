@@ -216,6 +216,24 @@ class MainActivity : AppCompatActivity() {
             loadSalesReport(7, "آخر 7 أيام")
         }
 
+        binding.btnAddCategory.setOnClickListener {
+            val newCat = binding.etNewCategory.text.toString().trim()
+            if (newCat.isEmpty()) {
+                toast("أدخل اسم أو قيمة الفئة الجديدة")
+                return@setOnClickListener
+            }
+            val currentList = prefs.getAllowedCategories().toMutableList()
+            if (newCat !in currentList) {
+                currentList.add(newCat)
+                prefs.allowedCategoriesCsv = currentList.joinToString(",")
+                binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv)
+            }
+            binding.etNewCategory.setText("")
+            val msg = "تمت إضافة الفئة ($newCat) إلى قائمة الفئات المسموحة."
+            appendOutput(msg)
+            recordLog(msg)
+        }
+
         binding.btnSaveRules.setOnClickListener {
             val cats = binding.etAllowedCategories.text.toString().trim()
             val threshold = binding.etLowStockThreshold.text.toString().trim().toIntOrNull()
