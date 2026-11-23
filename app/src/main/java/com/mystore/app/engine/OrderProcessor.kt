@@ -17,14 +17,17 @@ class OrderProcessor(private val context: Context) {
         }
 
         val cleanBody = MessageParser.sanitize(rawBody)
-        if (prefs.requireJaibSender && !MessageParser.isJaibSource(senderPhone, cleanBody)) {
-            return "تم تجاهل الرسالة: المصدر ليس من حساب/رسائل Jaib."
+        val matchedSource = MessageParser.detectSource(senderPhone, cleanBody, prefs.allowedSourcesCsv)
+        if (prefs.requireSourceMatch && matchedSource == null) {
+            return "تم تجاهل الرسالة: المصدر غير مطابق للمصادر المعتمدة (${prefs.allowedSourcesCsv})."
         }
 
         val parsed = MessageParser.parse(
             body = cleanBody,
             keywordPattern = prefs.keywordPattern,
-            phonePattern = prefs.phonePattern
+            phonePattern = prefs.phonePattern,
+            senderPhone = senderPhone,
+            allowedSourcesCsv = prefs.allowedSourcesCsv
         )
 
         val allowedCategories = prefs.getAllowedCategories()
@@ -38,7 +41,8 @@ class OrderProcessor(private val context: Context) {
         val resolvedPhone = resolveExplicitRecipientPhone(
             senderPhone = senderPhone,
             parsedPhone = parsed.customerPhone,
-            rawBody = cleanBody
+            rawBody = cleanBody,
+            matchedSource = matchedSource
         )
 
         val pendingId = db.pendingSmsDao().insertPending(
@@ -68,7 +72,8 @@ class OrderProcessor(private val context: Context) {
             pendingId = pendingId,
             customerPhone = resolvedPhone,
             category = candidateCategory,
-            explicitAmount = parsed.amount
+            explicitAmount = parsed.amount,
+            sourceLabel = matchedSource ?: "مباشر"
         )
     }
 
@@ -84,10 +89,13 @@ class OrderProcessor(private val context: Context) {
 
         for (item in pendingList) {
             val cleanBody = MessageParser.sanitize(item.rawBody)
+            val matchedSource = MessageParser.detectSource(item.senderPhone, cleanBody, prefs.allowedSourcesCsv)
             val parsed = MessageParser.parse(
                 body = cleanBody,
                 keywordPattern = prefs.keywordPattern,
-                phonePattern = prefs.phonePattern
+                phonePattern = prefs.phonePattern,
+                senderPhone = item.senderPhone,
+                allowedSourcesCsv = prefs.allowedSourcesCsv
             )
             val category = item.parsedCategory?.trim()
                 ?: parsed.category?.trim()
@@ -107,7 +115,8 @@ class OrderProcessor(private val context: Context) {
             val resolvedPhone = resolveExplicitRecipientPhone(
                 senderPhone = item.senderPhone,
                 parsedPhone = parsed.customerPhone,
-                rawBody = cleanBody
+                rawBody = cleanBody,
+                matchedSource = matchedSource
             )
 
             if (resolvedPhone == null) {
@@ -125,7 +134,8 @@ class OrderProcessor(private val context: Context) {
                 pendingId = item.id,
                 customerPhone = resolvedPhone,
                 category = category,
-                explicitAmount = item.parsedAmount ?: parsed.amount
+                explicitAmount = item.parsedAmount ?: parsed.amount,
+                sourceLabel = matchedSource ?: "انتظار"
             )
             if (result.startsWith("تم")) {
                 processedCount++
@@ -141,7 +151,8 @@ class OrderProcessor(private val context: Context) {
         pendingId: Long,
         customerPhone: String,
         category: String,
-        explicitAmount: Double?
+        explicitAmount: Double?,
+        sourceLabel: String
     ): String {
         if (!prefs.isServiceEnabled) {
             return "الخدمة متوقفة يدوياً."
@@ -228,15 +239,13 @@ class OrderProcessor(private val context: Context) {
 
         db.pendingSmsDao().updateStatus(pendingId, "SENT", null, System.currentTimeMillis())
 
-        // إشعار إرسال الكرت
         NotificationHelper.showAlert(
             context,
-            "تم بيع كود $category",
+            "تم بيع كود $category ($sourceLabel)",
             "أرسل الرقم: $customerPhone | الكرت: ${card.code}",
             notificationId = (pendingId % 1000 + 2300).toInt()
         )
 
-        // تنبيه انخفاض المخزون عند الوصول للحد المحدد (افتراضي <= 1)
         val remaining = db.cardDao().getAvailableCountsByCategory()
             .firstOrNull { it.category == category }?.availableCount ?: 0
         if (remaining <= prefs.lowStockThreshold) {
@@ -248,13 +257,14 @@ class OrderProcessor(private val context: Context) {
             )
         }
 
-        return "تم تنفيذ الطلب وإرسال الكرت فئة ${card.category} (${card.code}) إلى $customerPhone | المتبقي: $remaining"
+        return "تم تنفيذ الطلب ($sourceLabel) وإرسال الكرت فئة ${card.category} (${card.code}) إلى $customerPhone | المتبقي: $remaining"
     }
 
     private fun resolveExplicitRecipientPhone(
         senderPhone: String,
         parsedPhone: String?,
-        rawBody: String
+        rawBody: String,
+        matchedSource: String?
     ): String? {
         val sanitizedBody = rawBody.replace(Regex("""رص\s*:?\s*\d+(?:\.\d+)?"""), " ")
         val explicitInBody = Regex("""\b(7\d{8})\b""").findAll(sanitizedBody)
@@ -273,7 +283,7 @@ class OrderProcessor(private val context: Context) {
         val aliasBySender = prefs.getExplicitAlias(senderPhone)
         if (aliasBySender != null) return aliasBySender
 
-        if (prefs.isValidYemeniPhone(senderPhone) && !MessageParser.isJaibSource(senderPhone, rawBody)) {
+        if (prefs.isValidYemeniPhone(senderPhone) && matchedSource == null) {
             return senderPhone.filter { it.isDigit() }
         }
 
