@@ -405,7 +405,7 @@
                         app:cornerRadius="12dp" />
                 </LinearLayout>
 
-                <!-- 6) قسم الضبط (الفئات + الإشعارات + القواعد + الباقات + قفل النقش/الرمز) -->
+                <!-- 6) قسم الضبط (الفئات + إضافة فئة + الإشعارات + القواعد + الباقات + القفل) -->
                 <LinearLayout
                     android:id="@+id/sectionSettings"
                     android:layout_width="match_parent"
@@ -427,10 +427,38 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="#0F172A"
-                        android:hint="الفئات المسموحة (مثال: 100,200,300,500,1000,2000)"
+                        android:hint="الفئات المسموحة: 100,200,300,500,1000,2000"
                         android:padding="12dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <EditText
+                            android:id="@+id/etNewCategory"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:background="#0F172A"
+                            android:hint="إضافة فئة جديدة (مثال: 1500)"
+                            android:padding="12dp"
+                            android:textColor="#FFFFFF"
+                            android:textColorHint="#64748B" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddCategory"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="إضافة فئة"
+                            app:backgroundTint="#0284C7"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
 
                     <EditText
                         android:id="@+id/etLowStockThreshold"
