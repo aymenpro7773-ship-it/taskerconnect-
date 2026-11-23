@@ -405,7 +405,7 @@
                         app:cornerRadius="12dp" />
                 </LinearLayout>
 
-                <!-- 6) قسم الضبط (القواعد + الباقات + قفل النقش/الرمز) -->
+                <!-- 6) قسم الضبط (الفئات + الإشعارات + القواعد + الباقات + قفل النقش/الرمز) -->
                 <LinearLayout
                     android:id="@+id/sectionSettings"
                     android:layout_width="match_parent"
@@ -416,10 +416,33 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ضبط القواعد والباقات وقفل الدخول"
+                        android:text="ضبط الفئات والإشعارات والقواعد والباقات"
                         android:textColor="#93C5FD"
                         android:textSize="15sp"
                         android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/etAllowedCategories"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="#0F172A"
+                        android:hint="الفئات المسموحة (مثال: 100,200,300,500,1000,2000)"
+                        android:padding="12dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#64748B" />
+
+                    <EditText
+                        android:id="@+id/etLowStockThreshold"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="#0F172A"
+                        android:hint="حد تنبيه انخفاض المخزون (مثال: 1)"
+                        android:inputType="number"
+                        android:padding="12dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#64748B" />
 
                     <EditText
                         android:id="@+id/etKeywordPattern"
@@ -461,7 +484,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="حفظ قواعد الرسائل والباقات"
+                        android:text="حفظ الفئات والإشعارات والقواعد"
                         app:backgroundTint="#2563EB"
                         app:cornerRadius="12dp" />
 
@@ -505,7 +528,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- صندوق المخرجات المشترك -->
+                <!-- صندوق المخرجات واللوج والإشعارات -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -513,14 +536,57 @@
                     app:cardBackgroundColor="#0D1D3A"
                     app:cardCornerRadius="14dp">
 
-                    <TextView
-                        android:id="@+id/tvOutput"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="14dp"
-                        android:text="لا توجد بيانات معروضة بعد."
-                        android:textColor="#E2E8F0"
-                        android:textSize="13sp" />
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="النتائج وسجل اللوج والإشعارات"
+                                android:textColor="#93C5FD"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnClearLog"
+                                android:layout_width="wrap_content"
+                                android:layout_height="34dp"
+                                android:text="مسح اللوج"
+                                android:textSize="11sp"
+                                app:backgroundTint="#334155"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvOutput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="لا توجد بيانات معروضة بعد."
+                            android:textColor="#E2E8F0"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvEventLog"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="#081124"
+                            android:padding="10dp"
+                            android:text="سجل اللوج فارغ."
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </ScrollView>
