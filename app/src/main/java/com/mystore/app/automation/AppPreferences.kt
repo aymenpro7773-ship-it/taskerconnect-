@@ -1,8 +1,10 @@
 package com.mystore.app.automation
 
+import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
+import com.mystore.app.R
 import com.mystore.app.engine.MessageParser
 
 class AppPreferences(context: Context) {
@@ -15,12 +17,17 @@ class AppPreferences(context: Context) {
         set(value) = prefs.edit().putBoolean("service_enabled", value).apply()
 
     var isDarkMode: Boolean
-        get() = prefs.getBoolean("dark_mode", true)
+        get() = prefs.getBoolean("dark_mode", false)
         set(value) = prefs.edit().putBoolean("dark_mode", value).apply()
 
-    var requireJaibSender: Boolean
-        get() = prefs.getBoolean("require_jaib_sender", true)
-        set(value) = prefs.edit().putBoolean("require_jaib_sender", value).apply()
+    var requireSourceMatch: Boolean
+        get() = prefs.getBoolean("require_source_match", true)
+        set(value) = prefs.edit().putBoolean("require_source_match", value).apply()
+
+    var allowedSourcesCsv: String
+        get() = prefs.getString("allowed_sources_csv", "jaib,جيب,ونيون,union")
+            ?: "jaib,جيب,ونيون,union"
+        set(value) = prefs.edit().putString("allowed_sources_csv", value).apply()
 
     var allowedCategoriesCsv: String
         get() = prefs.getString("allowed_categories", "100,200,300,500,1000,2000")
@@ -158,7 +165,8 @@ class AppPreferences(context: Context) {
     }
 
     companion object {
-        fun applyTheme(darkMode: Boolean) {
+        fun applyTheme(darkMode: Boolean, activity: Activity? = null) {
+            activity?.setTheme(if (darkMode) R.style.Theme_MyStore_Night else R.style.Theme_MyStore)
             AppCompatDelegate.setDefaultNightMode(
                 if (darkMode) AppCompatDelegate.MODE_NIGHT_YES
                 else AppCompatDelegate.MODE_NIGHT_NO
