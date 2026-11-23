@@ -784,7 +784,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="#0D1B36"
-        app:itemActiveIndicatorColor="#1D4ED8"
         app:itemIconTint="#93C5FD"
         app:itemTextColor="#E2E8F0"
         app:labelVisibilityMode="labeled"
