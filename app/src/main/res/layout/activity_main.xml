@@ -405,7 +405,7 @@
                         app:cornerRadius="12dp" />
                 </LinearLayout>
 
-                <!-- 6) قسم الضبط (الفئات + إضافة فئة + الإشعارات + القواعد + الباقات + القفل) -->
+                <!-- 6) قسم الضبط -->
                 <LinearLayout
                     android:id="@+id/sectionSettings"
                     android:layout_width="match_parent"
