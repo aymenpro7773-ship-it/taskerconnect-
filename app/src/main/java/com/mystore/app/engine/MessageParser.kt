@@ -4,28 +4,69 @@ object MessageParser {
 
     data class ParsedOrder(
         val category: String?,
-        val amount: Double?
+        val amount: Double?,
+        val customerPhone: String? = null
     )
 
-    fun parse(body: String): ParsedOrder {
-        val cleaned = body.trim()
-        if (cleaned.isEmpty()) return ParsedOrder(null, null)
+    val defaultBundles: Map<String, String> = mapOf(
+        "100" to "350ميجا",
+        "200" to "700ميجا",
+        "300" to "1100ميجا",
+        "500" to "2جيجا",
+        "1000" to "3جيجا",
+        "2000" to "7جيجا"
+    )
 
-        val amountRegex = Regex("""(\d+(?:\.\d+)?)""")
-        val amountMatch = amountRegex.find(cleaned)
-        val amount = amountMatch?.value?.toDoubleOrNull()
+    const val defaultReplyTemplate =
+        "وصل طلبك⚡\nكرت {amount} ({bundle})\nالكرت:{card}\nشبكة كونكت.. راحتك تهمنا"
+
+    fun sanitize(raw: String): String {
+        return raw.replace(Regex("[\\u200e\\u200f\\u202a-\\u202e]"), "").trim()
+    }
+
+    fun extractPhone(body: String, phonePattern: String = """7\d{8}"""): String? {
+        val clean = sanitize(body)
+        return Regex(phonePattern).find(clean)?.value?.trim()
+    }
+
+    fun parse(
+        body: String,
+        keywordPattern: String = """اضيف\s*(\d+)""",
+        phonePattern: String = """7\d{8}"""
+    ): ParsedOrder {
+        val cleaned = sanitize(body)
+        if (cleaned.isEmpty()) return ParsedOrder(null, null, null)
+
+        val phone = extractPhone(cleaned, phonePattern)
+        val kwMatch = Regex(keywordPattern).find(cleaned)?.groupValues?.getOrNull(1)?.trim()
 
         val lower = cleaned.lowercase()
         val category = when {
-            lower.contains("100") || cleaned.contains("مئة") || cleaned.contains("مائة") -> "100"
-            lower.contains("200") || cleaned.contains("مئتان") || cleaned.contains("مائتان") -> "200"
-            lower.contains("500") || cleaned.contains("خمسمئة") || cleaned.contains("خمسمائة") -> "500"
+            !kwMatch.isNullOrBlank() -> kwMatch
+            lower.contains("2000") -> "2000"
             lower.contains("1000") || lower.contains("1k") || cleaned.contains("الف") || cleaned.contains("ألف") -> "1000"
-            amount != null -> amount.toInt().toString()
-            else -> null
+            lower.contains("500") || cleaned.contains("خمسمئة") || cleaned.contains("خمسمائة") -> "500"
+            lower.contains("300") || cleaned.contains("ثلاثمئة") || cleaned.contains("ثلاثمائة") -> "300"
+            lower.contains("200") || cleaned.contains("مئتان") || cleaned.contains("مائتان") -> "200"
+            lower.contains("100") || cleaned.contains("مئة") || cleaned.contains("مائة") -> "100"
+            else -> Regex("""\b(\d{2,5})\b""").find(cleaned)?.groupValues?.getOrNull(1)
         }
 
-        return ParsedOrder(category = category, amount = amount)
+        val amount = category?.toDoubleOrNull()
+        return ParsedOrder(category = category, amount = amount, customerPhone = phone)
+    }
+
+    fun buildReplyMessage(
+        amount: String,
+        cardCode: String,
+        bundles: Map<String, String> = defaultBundles,
+        template: String = defaultReplyTemplate
+    ): String {
+        val bundle = bundles[amount].orEmpty()
+        return template
+            .replace("{amount}", amount)
+            .replace("{bundle}", bundle)
+            .replace("{card}", cardCode)
     }
 
     fun extractCardCode(body: String): String? {
@@ -33,4 +74,3 @@ object MessageParser {
         return codeRegex.find(body)?.value
     }
 }
-
