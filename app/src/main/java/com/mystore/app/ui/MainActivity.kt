@@ -54,7 +54,6 @@ class MainActivity : AppCompatActivity() {
     private val processor by lazy { OrderProcessor(this) }
     private val eventLogs = ArrayDeque<String>()
 
-    private val categoryCardsCache = linkedMapOf<String, MutableList<String>>()
     private var selectedStockCategory: String = "100"
     private var lastExportContent: String = ""
     private var lockShownInSession: Boolean = false
@@ -92,7 +91,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         applyPaletteDirectly(prefs.isDarkMode)
-        loadLocalCardCacheFromPrefs()
         setupCategorySelectorBeforeStockActions()
         setCardsEditorReadOnly(true)
 
@@ -120,6 +118,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         syncServiceStatusUi()
+        refreshDashboardSummary()
     }
 
     private fun setupCategorySelectorBeforeStockActions() {
@@ -157,7 +156,6 @@ class MainActivity : AppCompatActivity() {
         val allCats = linkedSetOf("100", "200", "300", "500", "1000", "2000")
             .apply {
                 addAll(prefs.getAllowedCategories())
-                addAll(categoryCardsCache.keys)
                 add(activeCat)
             }
             .map { it.trim() }
@@ -241,40 +239,6 @@ class MainActivity : AppCompatActivity() {
             edit.setTextColor(textPrimary)
             edit.setHintTextColor(textHint)
         }
-    }
-
-    private fun loadLocalCardCacheFromPrefs() {
-        val sp = getSharedPreferences("cards_list_cache", MODE_PRIVATE)
-        val raw = sp.getString("cache_blob", "") ?: ""
-        categoryCardsCache.clear()
-        if (raw.isNotBlank()) {
-            raw.split("###").forEach { block ->
-                val parts = block.split("::", limit = 2)
-                if (parts.size == 2 && parts[0].isNotBlank()) {
-                    val codes = parts[1].split("\n")
-                        .map { it.trim() }
-                        .filter { it.isNotEmpty() }
-                        .toMutableList()
-                    categoryCardsCache[parts[0].trim()] = codes
-                }
-            }
-        }
-        prefs.getAllowedCategories().forEach { cat ->
-            if (!categoryCardsCache.containsKey(cat)) {
-                categoryCardsCache[cat] = mutableListOf()
-            }
-        }
-        if (!categoryCardsCache.containsKey("100")) {
-            categoryCardsCache["100"] = mutableListOf()
-        }
-    }
-
-    private fun saveLocalCardCacheToPrefs() {
-        val sp = getSharedPreferences("cards_list_cache", MODE_PRIVATE)
-        val blob = categoryCardsCache.entries.joinToString("###") { (cat, list) ->
-            "$cat::${list.joinToString("\n")}"
-        }
-        sp.edit().putString("cache_blob", blob).apply()
     }
 
     private fun syncServiceStatusUi() {
@@ -451,7 +415,6 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        // إضافة أكواد جديدة (يفعل التعديل لكتابة الأكواد الجديدة ثم يضيفها)
         binding.btnAddCodes.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
@@ -470,17 +433,20 @@ class MainActivity : AppCompatActivity() {
             insertCodesList(category, codes)
         }
 
-        // زر التعديل/الحذف: يفتح وضع التحرير عند الضغط عليه، وعند الضغط مرة أخرى يحفظ التعديلات والحذف ويعود للقراءة فقط
         binding.btnEditCategoryStock.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
-            val currentList = categoryCardsCache.getOrPut(category) { mutableListOf() }
 
             if (!isEditModeEnabled) {
-                setCardsEditorReadOnly(false)
-                binding.etBulkCodes.setText(currentList.joinToString("\n"))
-                binding.etBulkCodes.hint = "عدّل أو احذف أي سطر ثم اضغط حفظ التعديل / الحذف..."
-                toast("وضع التعديل مفعّل: عدّل أو احذف الأسطر ثم اضغط حفظ التعديل / الحذف")
+                lifecycleScope.launch {
+                    val currentCodes = withContext(Dispatchers.IO) {
+                        db.cardDao().getAvailableCardsByCategory(category).map { it.code }
+                    }
+                    setCardsEditorReadOnly(false)
+                    binding.etBulkCodes.setText(currentCodes.joinToString("\n"))
+                    binding.etBulkCodes.hint = "عدّل أو احذف أي سطر ثم اضغط حفظ التعديل / الحذف..."
+                    toast("وضع التعديل مفعّل: عدّل أو احذف الأسطر ثم اضغط حفظ التعديل / الحذف")
+                }
             } else {
                 val updatedCodes = extractLines(binding.etBulkCodes.text.toString())
                 saveBulkEditsForCategory(category, updatedCodes)
@@ -498,10 +464,14 @@ class MainActivity : AppCompatActivity() {
         binding.btnExportFile.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
-            val list = categoryCardsCache[category].orEmpty()
-            lastExportContent = list.mapIndexed { idx, code -> "${idx + 1}. $code" }.joinToString("\n")
-            val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-            exportTextLauncher.launch("cards_${category}_$stamp.txt")
+            lifecycleScope.launch {
+                val codes = withContext(Dispatchers.IO) {
+                    db.cardDao().getAvailableCardsByCategory(category).map { it.code }
+                }
+                lastExportContent = codes.mapIndexed { idx, code -> "${idx + 1} - $code" }.joinToString("\n")
+                val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                exportTextLauncher.launch("cards_${category}_$stamp.txt")
+            }
         }
 
         binding.btnSalesReceiptReport.setOnClickListener {
@@ -543,10 +513,6 @@ class MainActivity : AppCompatActivity() {
                 currentList.add(newCat)
                 prefs.allowedCategoriesCsv = currentList.joinToString(",")
                 binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv)
-            }
-            if (!categoryCardsCache.containsKey(newCat)) {
-                categoryCardsCache[newCat] = mutableListOf()
-                saveLocalCardCacheToPrefs()
             }
             selectedStockCategory = newCat
             binding.etStockCategory.setText(newCat)
@@ -651,62 +617,81 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadCategoryView(cat: String) {
-        val list = categoryCardsCache.getOrPut(cat) { mutableListOf() }
-        binding.etBulkCodes.setText("")
-        binding.etBulkCodes.hint = "اضغط (إضافة الأكواد) لإضافة أكواد جديدة أو (تعديل / حذف الكروت) لتحرير القائمة..."
-
-        val allCats = linkedSetOf("100", "200", "300", "500", "1000", "2000")
-            .apply {
-                addAll(prefs.getAllowedCategories())
-                addAll(categoryCardsCache.keys)
+        lifecycleScope.launch {
+            val (dbCards, summaries) = withContext(Dispatchers.IO) {
+                val cards = db.cardDao().getAvailableCardsByCategory(cat)
+                val counts = db.cardDao().getAvailableCountsByCategory()
+                cards to counts
             }
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
 
-        val countersLine = allCats.joinToString(" | ") { c ->
-            "$c:${categoryCardsCache[c]?.size ?: 0}"
+            val countMap = summaries.associate { it.category to it.availableCount }
+            val allCats = linkedSetOf("100", "200", "300", "500", "1000", "2000")
+                .apply {
+                    addAll(prefs.getAllowedCategories())
+                    addAll(countMap.keys)
+                }
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+
+            val countersLine = allCats.joinToString(" | ") { c ->
+                "$c:${countMap[c] ?: 0}"
+            }
+
+            val numberedCards = if (dbCards.isEmpty()) {
+                "لا توجد كروت متاحة في فئة $cat حالياً."
+            } else {
+                dbCards.mapIndexed { idx, card -> "${idx + 1} - ${card.code}" }.joinToString("\n")
+            }
+
+            binding.etBulkCodes.setText("")
+            binding.etBulkCodes.hint = "اضغط (إضافة الأكواد) لإضافة أكواد جديدة أو (تعديل / حذف الكروت) لتحرير القائمة..."
+
+            appendOutput(
+                "الفئة المحددة: $cat | عدد كروت الفئة: ${dbCards.size}\n" +
+                    "عداد الفئات: $countersLine\n" +
+                    "----------------------------------\n" +
+                    numberedCards
+            )
+            refreshDashboardSummary()
+            recordLog("عرض كروت فئة $cat من قاعدة البيانات (العدد: ${dbCards.size}).")
         }
-
-        val numberedCards = if (list.isEmpty()) {
-            "لا توجد كروت في فئة $cat حالياً."
-        } else {
-            list.mapIndexed { idx, code -> "${idx + 1} - $code" }.joinToString("\n")
-        }
-
-        appendOutput(
-            "الفئة المحددة: $cat | عدد كروت الفئة: ${list.size}\n" +
-                "عداد الفئات: $countersLine\n" +
-                "----------------------------------\n" +
-                numberedCards
-        )
-        recordLog("عرض كروت فئة $cat (العدد: ${list.size}).")
     }
 
     private fun saveBulkEditsForCategory(category: String, updatedCodes: List<String>) {
-        val previousCount = categoryCardsCache[category]?.size ?: 0
-        categoryCardsCache[category] = updatedCodes.toMutableList()
-        saveLocalCardCacheToPrefs()
-        loadCategoryView(category)
+        lifecycleScope.launch {
+            val (prevCount, newCount) = withContext(Dispatchers.IO) {
+                val existing = db.cardDao().getAvailableCardsByCategory(category)
+                db.cardDao().deleteAvailableCardsByCategory(category)
+                val newEntities = updatedCodes.map { code ->
+                    CardEntity(
+                        category = category,
+                        code = code,
+                        price = category.toDoubleOrNull() ?: 0.0,
+                        isSold = false
+                    )
+                }
+                if (newEntities.isNotEmpty()) {
+                    db.cardDao().insertCards(newEntities)
+                }
+                val after = db.cardDao().getAvailableCardsByCategory(category).size
+                existing.size to after
+            }
 
-        val diff = updatedCodes.size - previousCount
-        val summaryChange = when {
-            diff < 0 -> "تم حذف ${-diff} كرت من فئة $category (المتبقي: ${updatedCodes.size})."
-            diff > 0 -> "تم تحديث فئة $category بإجمالي ${updatedCodes.size} كرت."
-            else -> "تم حفظ تعديلات كروت فئة $category (${updatedCodes.size} كرت)."
+            loadCategoryView(category)
+            val diff = newCount - prevCount
+            val summaryChange = when {
+                diff < 0 -> "تم حذف ${-diff} كرت من فئة $category في قاعدة البيانات (المتبقي: $newCount)."
+                diff > 0 -> "تم تحديث فئة $category بإجمالي $newCount كرت في قاعدة البيانات."
+                else -> "تم حفظ تعديلات كروت فئة $category ($newCount كرت) في قاعدة البيانات."
+            }
+            toast(summaryChange)
+            recordLog(summaryChange)
         }
-        toast(summaryChange)
-        recordLog(summaryChange)
     }
 
     private fun insertCodesList(category: String, codes: List<String>) {
-        val targetList = categoryCardsCache.getOrPut(category) { mutableListOf() }
-        targetList.addAll(codes)
-        saveLocalCardCacheToPrefs()
-        setCardsEditorReadOnly(true)
-        loadCategoryView(category)
-
         lifecycleScope.launch {
-            val inserted = withContext(Dispatchers.IO) {
+            val insertedCount = withContext(Dispatchers.IO) {
                 val entities = codes.map { code ->
                     CardEntity(
                         category = category,
@@ -717,8 +702,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 db.cardDao().insertCards(entities).count { it > 0 }
             }
-            refreshDashboardSummary()
-            recordLog("إضافة ${codes.size} كرت إلى فئة $category (قاعدة البيانات: $inserted).")
+            setCardsEditorReadOnly(true)
+            loadCategoryView(category)
+            recordLog("تمت إضافة $insertedCount كرت جديد إلى فئة $category في قاعدة البيانات.")
         }
     }
 
@@ -778,10 +764,6 @@ class MainActivity : AppCompatActivity() {
             append("الفئات المسموحة: ${prefs.allowedCategoriesCsv}\n")
             append("الباقات: ${prefs.bundlesCsv}\n")
             append("قالب الرد: ${prefs.replyTemplate}\n")
-            categoryCardsCache.forEach { (cat, list) ->
-                append("\n[فئة $cat - العدد ${list.size}]\n")
-                list.forEachIndexed { idx, code -> append("${idx + 1} - $code\n") }
-            }
         }
         FileOutputStream(file).use { it.write(content.toByteArray(Charsets.UTF_8)) }
         return file.absolutePath
@@ -968,22 +950,23 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
 
-            val localList = categoryCardsCache[category]
-            val localCard = localList?.firstOrNull()
-            val dbCard = withContext(Dispatchers.IO) { db.cardDao().getNextAvailableCard(category) }
-            val chosenCode = localCard ?: dbCard?.code
+            val (dbCard, remainingCount) = withContext(Dispatchers.IO) {
+                val card = db.cardDao().getNextAvailableCard(category)
+                val count = db.cardDao().getAvailableCardsByCategory(category).size
+                card to count
+            }
 
-            if (chosenCode == null) {
+            if (dbCard == null) {
                 val alertMsg = "لا يوجد كرت متاح في فئة $category للرقم $phone"
                 NotificationHelper.showAlert(this@MainActivity, "نفاد المخزون", alertMsg, notificationId = 2010)
                 appendOutput("[محاكاة] $alertMsg")
                 return@launch
             }
 
-            val remainingAfter = ((localList?.size ?: 1) - 1).coerceAtLeast(0)
+            val remainingAfter = (remainingCount - 1).coerceAtLeast(0)
             val replyPreview = MessageParser.buildReplyMessage(
                 amount = category,
-                cardCode = chosenCode,
+                cardCode = dbCard.code,
                 bundles = prefs.getBundlesMap(),
                 template = prefs.replyTemplate,
                 categoryTemplates = prefs.getCategoryTemplatesMap()
