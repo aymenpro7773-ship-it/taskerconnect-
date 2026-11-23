@@ -55,7 +55,7 @@ interface PendingSmsDao {
     @Query("UPDATE pending_sms SET status = :status, errorReason = :reason, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateStatus(id: Long, status: String, reason: String?, updatedAt: Long)
 
-    @Query("SELECT * FROM pending_sms ORDER BY id DESC LIMIT 30")
+    @Query("SELECT * FROM pending_sms ORDER BY id DESC LIMIT :limit")
     suspend fun getRecentSms(limit: Int = 30): List<PendingSmsEntity>
 }
 
@@ -82,4 +82,3 @@ interface AppSettingDao {
     @Query("SELECT value FROM app_settings WHERE `key` = :key LIMIT 1")
     suspend fun getSetting(key: String): String?
 }
-
