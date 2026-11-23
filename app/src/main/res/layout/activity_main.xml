@@ -665,7 +665,7 @@
         </ScrollView>
     </LinearLayout>
 
-    <!-- شريط التنقل السفلي الواضح (5 أقسام رئيسية) -->
+    <!-- شريط التنقل السفلي (5 أقسام رئيسية) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
