@@ -349,8 +349,10 @@ class MainActivity : AppCompatActivity() {
                     notificationId = 2011
                 )
                 recordLog("إشعار انخفاض مخزون: $text")
-                "\n⚠️ تنبيه انخفاض المخزون: $text"
-            } else ""
+                "\nتنبيه انخفاض المخزون: $text"
+            } else {
+                ""
+            }
 
             val replyPreview = MessageParser.buildReplyMessage(
                 amount = category,
@@ -359,11 +361,12 @@ class MainActivity : AppCompatActivity() {
                 template = prefs.replyTemplate
             )
 
-            val outputText =
-                "[محاكاة ناجحة - لم يتم إرسال SMS]\n" +
-                    "الرقم: $phone | الفئة: $category | الكرت المرشح: ${nextCard.code}\n" +
-                    "المتبقي بعد الصرف: $remainingAfter$lowStockAlert\n" +
-                    "--- نص الرد ---\n$replyPreview"
+            val outputText = buildString {
+                append("[محاكاة ناجحة - لم يتم إرسال SMS]\n")
+                append("الرقم: $phone | الفئة: $category | الكرت المرشح: ${nextCard.code}\n")
+                append("المتبقي بعد الصرف: $remainingAfter$lowStockAlert\n")
+                append("--- نص الرد ---\n$replyPreview")
+            }
 
             appendOutput(outputText)
             recordLog("محاكاة: فئة $category للرقم $phone | متبقي $remainingAfter")
@@ -393,17 +396,25 @@ class MainActivity : AppCompatActivity() {
                 val stockByCat = db.cardDao().getAvailableCountsByCategory()
 
                 val fmt = SimpleDateFormat("MM/dd HH:mm", Locale.getDefault())
-                val stockLines = if (stockByCat.isEmpty()) "لا يوجد مخزون متاح"
-                else stockByCat.joinToString("\n") { "• فئة ${it.category}: ${it.availableCount} كرت" }
-
-                val saleLines = if (sales.isEmpty()) "لا توجد عمليات مسجلة"
-                else sales.joinToString("\n") {
-                    "• ${fmt.format(Date(it.timestamp))} | ${it.customerPhone} | فئة ${it.cardCategory} | ${it.cardCode}"
+                val stockLines = if (stockByCat.isEmpty()) {
+                    "لا يوجد مخزون متاح"
+                } else {
+                    stockByCat.joinToString("\n") { "• فئة ${it.category}: ${it.availableCount} كرت" }
                 }
 
-                "تقرير ($label):\nالعمليات: $count | الإجمالي: $revenue\n" +
-                    "--- المخزون المتاح ---\n$stockLines\n" +
-                    "--- آخر العمليات ---\n$saleLines"
+                val saleLines = if (sales.isEmpty()) {
+                    "لا توجد عمليات مسجلة"
+                } else {
+                    sales.joinToString("\n") {
+                        "• ${fmt.format(Date(it.timestamp))} | ${it.customerPhone} | فئة ${it.cardCategory} | ${it.cardCode}"
+                    }
+                }
+
+                buildString {
+                    append("تقرير ($label):\nالعمليات: $count | الإجمالي: $revenue\n")
+                    append("--- المخزون المتاح ---\n$stockLines\n")
+                    append("--- آخر العمليات ---\n$saleLines")
+                }
             }
             appendOutput(reportText)
             recordLog("عرض تقرير $label.")
@@ -415,8 +426,11 @@ class MainActivity : AppCompatActivity() {
             val since = System.currentTimeMillis() - (30L * 24L * 60L * 60L * 1000L)
             val text = withContext(Dispatchers.IO) {
                 val allSales = db.saleLogDao().getSalesSince(since)
-                val filtered = if (query.isBlank()) allSales
-                else allSales.filter { it.customerPhone.contains(query, ignoreCase = true) }
+                val filtered = if (query.isBlank()) {
+                    allSales
+                } else {
+                    allSales.filter { it.customerPhone.contains(query, ignoreCase = true) }
+                }
 
                 val grouped = filtered.groupBy { it.customerPhone }
                 if (grouped.isEmpty()) {
