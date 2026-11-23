@@ -5,7 +5,8 @@ object MessageParser {
     data class ParsedOrder(
         val category: String?,
         val amount: Double?,
-        val customerPhone: String? = null
+        val customerPhone: String? = null,
+        val matchedSource: String? = null
     )
 
     val defaultBundles: Map<String, String> = mapOf(
@@ -29,22 +30,36 @@ object MessageParser {
         return Regex(phonePattern).find(clean)?.value?.trim()
     }
 
-    fun isJaibSource(senderPhone: String, body: String): Boolean {
+    fun detectSource(
+        senderPhone: String,
+        body: String,
+        allowedSourcesCsv: String = "jaib,جيب,ونيون,union"
+    ): String? {
         val s = sanitize(senderPhone).lowercase()
         val b = sanitize(body).lowercase()
-        return s.contains("jaib") || s.contains("جيب") || b.contains("jaib") || b.contains("جيب")
+        val sources = allowedSourcesCsv
+            .split(",")
+            .map { it.trim().lowercase() }
+            .filter { it.isNotEmpty() }
+
+        return sources.firstOrNull { src ->
+            s.contains(src) || b.contains(src)
+        }
     }
 
     fun parse(
         body: String,
         keywordPattern: String = """اضيف\s*(\d+)""",
-        phonePattern: String = """7\d{8}"""
+        phonePattern: String = """7\d{8}""",
+        senderPhone: String = "",
+        allowedSourcesCsv: String = "jaib,جيب,ونيون,union"
     ): ParsedOrder {
         val cleaned = sanitize(body)
-        if (cleaned.isEmpty()) return ParsedOrder(null, null, null)
+        if (cleaned.isEmpty()) return ParsedOrder(null, null, null, null)
 
         val phone = extractPhone(cleaned, phonePattern)
         val kwMatch = Regex(keywordPattern).find(cleaned)?.groupValues?.getOrNull(1)?.trim()
+        val matchedSource = detectSource(senderPhone, cleaned, allowedSourcesCsv)
 
         val lower = cleaned.lowercase()
         val category = when {
@@ -59,7 +74,12 @@ object MessageParser {
         }
 
         val amount = category?.toDoubleOrNull()
-        return ParsedOrder(category = category, amount = amount, customerPhone = phone)
+        return ParsedOrder(
+            category = category,
+            amount = amount,
+            customerPhone = phone,
+            matchedSource = matchedSource
+        )
     }
 
     fun buildReplyMessage(
