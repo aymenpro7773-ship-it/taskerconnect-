@@ -273,8 +273,6 @@ class MainActivity : AppCompatActivity() {
             }
             lifecycleScope.launch {
                 val addedCount = withContext(Dispatchers.IO) {
-                    val existing = db.cardDao().getAvailableCardsByCategory(category)
-                    db.cardDao().deleteCards(existing)
                     val entities = newCodes.map { code ->
                         CardEntity(
                             category = category,
@@ -285,7 +283,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     db.cardDao().insertCards(entities).count { it > 0 }
                 }
-                val msg = "تم تحديث ملف فئة $category بإجمالي $addedCount كرت متاح."
+                binding.etBulkCodes.setText("")
+                val msg = "تمت إضافة $addedCount كرت جديد إلى فئة $category."
                 appendOutput(msg)
                 recordLog(msg)
                 refreshDashboardSummary()
@@ -404,12 +403,15 @@ class MainActivity : AppCompatActivity() {
     private fun selectCategoryForStock(cat: String) {
         binding.etStockCategory.setText(cat.toString())
         lifecycleScope.launch {
-            val codesText = withContext(Dispatchers.IO) {
-                db.cardDao().getAvailableCardsByCategory(cat).joinToString("\n") { it.code }
+            val infoText = withContext(Dispatchers.IO) {
+                val summaries = db.cardDao().getAvailableCountsByCategory()
+                val availableCount = summaries.firstOrNull { it.category == cat }?.availableCount ?: 0
+                val nextCard = db.cardDao().getNextAvailableCard(cat)
+                val nextCodeInfo = if (nextCard != null) " | الكرت التالي: ${nextCard.code}" else ""
+                "فئة $cat: $availableCount كرت متاح$nextCodeInfo"
             }
-            binding.etBulkCodes.setText(codesText.toString())
-            appendOutput("تم تحميل فئة $cat للتعديل أو الإضافة.")
-            recordLog("اختيار فئة $cat في قسم المخزن والملفات.")
+            appendOutput(infoText)
+            recordLog("اختيار فئة $cat في قسم المخزن والملفات ($infoText).")
         }
     }
 
