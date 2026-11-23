@@ -329,7 +329,7 @@ class MainActivity : AppCompatActivity() {
             if (newCat !in currentList) {
                 currentList.add(newCat)
                 prefs.allowedCategoriesCsv = currentList.joinToString(",")
-                binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv)
+                binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv.toString())
             }
             binding.etNewCategory.setText("")
             val msg = "تمت إضافة الفئة ($newCat) إلى قائمة الفئات المسموحة."
@@ -402,12 +402,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun selectCategoryForStock(cat: String) {
-        binding.etStockCategory.setText(cat)
+        binding.etStockCategory.setText(cat.toString())
         lifecycleScope.launch {
             val codesText = withContext(Dispatchers.IO) {
                 db.cardDao().getAvailableCardsByCategory(cat).joinToString("\n") { it.code }
             }
-            binding.etBulkCodes.setText(codesText)
+            binding.etBulkCodes.setText(codesText.toString())
             appendOutput("تم تحميل فئة $cat للتعديل أو الإضافة.")
             recordLog("اختيار فئة $cat في قسم المخزن والملفات.")
         }
@@ -725,11 +725,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadRulesIntoSettingsFields() {
-        binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv)
+        binding.etAllowedCategories.setText(prefs.allowedCategoriesCsv.toString())
         binding.etLowStockThreshold.setText(prefs.lowStockThreshold.toString())
-        binding.etKeywordPattern.setText(prefs.keywordPattern)
-        binding.etBundlesCsv.setText(prefs.bundlesCsv)
-        binding.etReplyTemplate.setText(prefs.replyTemplate)
+        binding.etKeywordPattern.setText(prefs.keywordPattern.toString())
+        binding.etBundlesCsv.setText(prefs.bundlesCsv.toString())
+        binding.etReplyTemplate.setText(prefs.replyTemplate.toString())
     }
 
     private fun recordLog(entry: String) {
