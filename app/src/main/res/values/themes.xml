@@ -20,7 +20,7 @@
 
     <color name="app_bg">#FFFFFF</color>
     <color name="card_bg">#F8FAFC</color>
-    <color name="card_stroke">#E2E8F0</color>
+    <color name="card_stroke">#CBD5E1</color>
     <color name="input_bg">#F1F5F9</color>
     <color name="log_bg">#E2E8F0</color>
     <color name="text_primary">#0F172A</color>
