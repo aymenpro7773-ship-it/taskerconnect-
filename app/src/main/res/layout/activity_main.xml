@@ -1,64 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-android"
+    xmlns:app="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootCoordinator"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#081124">
+    android:background="#060D1F">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingBottom="72dp">
+        android:paddingBottom="84dp">
 
-        <!-- الشريط العلوي -->
-        <LinearLayout
+        <!-- شريط علوي عصري -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#0D1D3A"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="14dp">
+            android:layout_margin="12dp"
+            app:cardBackgroundColor="#0D1B36"
+            app:cardCornerRadius="22dp"
+            app:strokeColor="#1E3A8A"
+            app:strokeWidth="1dp">
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvHeaderTitle"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="CONNECT NET • ELITE BLUE"
-                    android:textColor="#60A5FA"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tvServiceStatus"
+                    <TextView
+                        android:id="@+id/tvHeaderTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CONNECT NET • 2027"
+                        android:textColor="#7DD3FC"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvServiceStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="حالة الخدمة: متوقفة"
+                        android:textColor="#CBD5E1"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnToggleTheme"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="حالة الخدمة: متوقفة"
-                    android:textColor="#CBD5E1"
-                    android:textSize="12sp" />
+                    android:layout_height="40dp"
+                    android:text="المظهر"
+                    android:textColor="#FFFFFF"
+                    app:backgroundTint="#2563EB"
+                    app:cornerRadius="20dp" />
             </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnToggleTheme"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="نهاري/ليلي"
-                android:textColor="#FFFFFF"
-                app:backgroundTint="#1D4ED8"
-                app:cornerRadius="12dp" />
-        </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:padding="12dp">
+            android:clipToPadding="false"
+            android:paddingHorizontal="12dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -84,14 +96,14 @@
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
                             app:cardBackgroundColor="#1D4ED8"
-                            app:cardCornerRadius="16dp">
+                            app:cardCornerRadius="22dp">
 
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:orientation="vertical"
-                                android:padding="16dp">
+                                android:padding="18dp">
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -104,10 +116,10 @@
                                     android:id="@+id/tvTodaySalesCount"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
+                                    android:layout_marginTop="6dp"
                                     android:text="0"
                                     android:textColor="#FFFFFF"
-                                    android:textSize="24sp"
+                                    android:textSize="26sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -117,31 +129,31 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            app:cardBackgroundColor="#1E3A8A"
-                            app:cardCornerRadius="16dp">
+                            app:cardBackgroundColor="#0F766E"
+                            app:cardCornerRadius="22dp">
 
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:orientation="vertical"
-                                android:padding="16dp">
+                                android:padding="18dp">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="إجمالي المخزون"
-                                    android:textColor="#DBEAFE"
+                                    android:textColor="#CCFBF1"
                                     android:textSize="13sp" />
 
                                 <TextView
                                     android:id="@+id/tvTotalStockCount"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
+                                    android:layout_marginTop="6dp"
                                     android:text="0"
                                     android:textColor="#FFFFFF"
-                                    android:textSize="24sp"
+                                    android:textSize="26sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -150,76 +162,76 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginTop="12dp"
                         android:orientation="horizontal"
                         android:weightSum="2">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStartService"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
                             android:text="تشغيل الخدمة"
                             app:backgroundTint="#2563EB"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="16dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStopService"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
                             android:text="إيقاف الخدمة"
                             app:backgroundTint="#334155"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="16dp" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:orientation="horizontal"
                         android:weightSum="3">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnReportDaily"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="4dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="5dp"
                             android:layout_weight="1"
                             android:text="يومي"
                             app:backgroundTint="#1E40AF"
-                            app:cornerRadius="10dp" />
+                            app:cornerRadius="14dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnReportWeekly"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="4dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="5dp"
                             android:layout_weight="1"
                             android:text="أسبوعي"
                             app:backgroundTint="#1E3A8A"
-                            app:cornerRadius="10dp" />
+                            app:cornerRadius="14dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnReportMonthly"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="44dp"
                             android:layout_weight="1"
                             android:text="شهري"
                             app:backgroundTint="#172554"
-                            app:cornerRadius="10dp" />
+                            app:cornerRadius="14dp" />
                     </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnProcessQueue"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
                         android:text="معالجة قائمة الانتظار"
                         app:backgroundTint="#0284C7"
-                        app:cornerRadius="12dp" />
+                        app:cornerRadius="16dp" />
                 </LinearLayout>
 
                 <!-- 2) قسم الإرسال والمحاكاة -->
@@ -233,20 +245,20 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="اختبار المحاكاة والإرسال اليدوي"
-                        android:textColor="#93C5FD"
-                        android:textSize="15sp"
+                        android:text="المحاكاة والإرسال اليدوي"
+                        android:textColor="#7DD3FC"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <EditText
                         android:id="@+id/etPhone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
                         android:hint="رقم المستلم (مثال: 771234567)"
                         android:inputType="phone"
-                        android:padding="12dp"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
@@ -254,12 +266,68 @@
                         android:id="@+id/etMessage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
                         android:gravity="top"
                         android:hint="نص الرسالة / المحاكاة (مثال: اضيف 500 771234567)"
                         android:lines="3"
-                        android:padding="12dp"
+                        android:padding="14dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#64748B" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:weightSum="2">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSimulate"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:text="محاكاة"
+                            app:backgroundTint="#2563EB"
+                            app:cornerRadius="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSendReal"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:text="إرسال SMS"
+                            app:backgroundTint="#0D9488"
+                            app:cornerRadius="16dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 3) قسم الزبائن والأرشيف -->
+                <LinearLayout
+                    android:id="@+id/sectionCustomers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="الزبائن والأرشيف"
+                        android:textColor="#7DD3FC"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/etSearchCustomer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
+                        android:hint="بحث برقم الزبون..."
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
@@ -271,65 +339,28 @@
                         android:weightSum="2">
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSimulate"
+                            android:id="@+id/btnLoadCustomers"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="46dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:text="محاكاة (بدون إرسال)"
-                            app:backgroundTint="#2563EB"
-                            app:cornerRadius="12dp" />
+                            android:text="سجل الزبائن"
+                            app:backgroundTint="#1D4ED8"
+                            app:cornerRadius="16dp" />
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSendReal"
+                            android:id="@+id/btnLoadArchive"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="46dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:text="إرسال فعلي SMS"
-                            app:backgroundTint="#059669"
-                            app:cornerRadius="12dp" />
+                            android:text="الأرشيف"
+                            app:backgroundTint="#0284C7"
+                            app:cornerRadius="16dp" />
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 3) قسم الزبائن -->
-                <LinearLayout
-                    android:id="@+id/sectionCustomers"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="سجل الزبائن وعملياتهم"
-                        android:textColor="#93C5FD"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <EditText
-                        android:id="@+id/etSearchCustomer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
-                        android:hint="بحث برقم الزبون..."
-                        android:padding="12dp"
-                        android:textColor="#FFFFFF"
-                        android:textColorHint="#64748B" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnLoadCustomers"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="عرض / تحديث سجل الزبائن"
-                        app:backgroundTint="#1D4ED8"
-                        app:cornerRadius="12dp" />
-                </LinearLayout>
-
-                <!-- 4) قسم المخزن -->
+                <!-- 4) قسم المخزن والملفات -->
                 <LinearLayout
                     android:id="@+id/sectionStock"
                     android:layout_width="match_parent"
@@ -340,19 +371,19 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="إدارة المخزون والأكواد"
-                        android:textColor="#93C5FD"
-                        android:textSize="15sp"
+                        android:text="المخزون والملفات"
+                        android:textColor="#7DD3FC"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <EditText
                         android:id="@+id/etStockCategory"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
                         android:hint="الفئة (مثال: 500)"
-                        android:padding="12dp"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
@@ -360,52 +391,54 @@
                         android:id="@+id/etBulkCodes"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
                         android:gravity="top"
                         android:hint="الصق الأكواد هنا (كود بكل سطر)..."
                         android:lines="4"
-                        android:padding="12dp"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAddCodes"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
                         android:text="إضافة الأكواد للمخزن"
                         app:backgroundTint="#2563EB"
-                        app:cornerRadius="12dp" />
-                </LinearLayout>
+                        app:cornerRadius="16dp" />
 
-                <!-- 5) قسم الأرشيف -->
-                <LinearLayout
-                    android:id="@+id/sectionArchive"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="أرشيف المبيعات والطلبات"
-                        android:textColor="#93C5FD"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnLoadArchive"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="عرض سجل المبيعات الأخير"
-                        app:backgroundTint="#1D4ED8"
-                        app:cornerRadius="12dp" />
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal"
+                        android:weightSum="2">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnImportFile"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:text="استيراد ملف"
+                            app:backgroundTint="#0F766E"
+                            app:cornerRadius="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnExportFile"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:text="تصدير ملف"
+                            app:backgroundTint="#1E40AF"
+                            app:cornerRadius="16dp" />
+                    </LinearLayout>
                 </LinearLayout>
 
-                <!-- 6) قسم الضبط -->
+                <!-- 5) قسم الضبط والقفل -->
                 <LinearLayout
                     android:id="@+id/sectionSettings"
                     android:layout_width="match_parent"
@@ -416,26 +449,26 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ضبط الفئات والإشعارات والقواعد والباقات"
-                        android:textColor="#93C5FD"
-                        android:textSize="15sp"
+                        android:text="الضبط والقفل والأمان"
+                        android:textColor="#7DD3FC"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <EditText
                         android:id="@+id/etAllowedCategories"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
                         android:hint="الفئات المسموحة: 100,200,300,500,1000,2000"
-                        android:padding="12dp"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -445,30 +478,30 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:background="#0F172A"
-                            android:hint="إضافة فئة جديدة (مثال: 1500)"
-                            android:padding="12dp"
+                            android:background="#0D1B36"
+                            android:hint="فئة جديدة (مثال: 1500)"
+                            android:padding="14dp"
                             android:textColor="#FFFFFF"
                             android:textColorHint="#64748B" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnAddCategory"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="إضافة فئة"
+                            android:layout_height="46dp"
+                            android:text="إضافة"
                             app:backgroundTint="#0284C7"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="16dp" />
                     </LinearLayout>
 
                     <EditText
                         android:id="@+id/etLowStockThreshold"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
-                        android:hint="حد تنبيه انخفاض المخزون (مثال: 1)"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
+                        android:hint="حد تنبيه انخفاض المخزون"
                         android:inputType="number"
-                        android:padding="12dp"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
@@ -476,10 +509,10 @@
                         android:id="@+id/etKeywordPattern"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
-                        android:hint="نمط الكلمة (الافتراضي: اضيف\\s*(\\d+))"
-                        android:padding="12dp"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
+                        android:hint="نمط الكلمة"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
@@ -487,10 +520,10 @@
                         android:id="@+id/etBundlesCsv"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
-                        android:hint="الباقات (مثال: 100:350ميجا,500:2جيجا)"
-                        android:padding="12dp"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
+                        android:hint="الباقات"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
@@ -498,77 +531,89 @@
                         android:id="@+id/etReplyTemplate"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#0F172A"
+                        android:layout_marginTop="10dp"
+                        android:background="#0D1B36"
                         android:gravity="top"
                         android:hint="قالب الرد ({amount} {bundle} {card})"
-                        android:lines="3"
-                        android:padding="12dp"
+                        android:lines="2"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSaveRules"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="حفظ الفئات والإشعارات والقواعد"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
+                        android:text="حفظ الإعدادات والقواعد"
                         app:backgroundTint="#2563EB"
-                        app:cornerRadius="12dp" />
+                        app:cornerRadius="16dp" />
 
                     <EditText
                         android:id="@+id/etNewSecret"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:background="#0F172A"
-                        android:hint="تعيين/تغيير نقش أو رمز الدخول (مثال: 12589)"
-                        android:padding="12dp"
+                        android:background="#0D1B36"
+                        android:hint="رمز أو نقش الدخول (4 خانات فأكثر)"
+                        android:padding="14dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#64748B" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:orientation="horizontal"
                         android:weightSum="2">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSaveLock"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="46dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:text="تفعيل/تغيير القفل"
-                            app:backgroundTint="#059669"
-                            app:cornerRadius="12dp" />
+                            android:text="تفعيل القفل"
+                            app:backgroundTint="#0D9488"
+                            app:cornerRadius="16dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDisableLock"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="46dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
                             android:text="إيقاف القفل"
                             app:backgroundTint="#475569"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="16dp" />
                     </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBiometricLock"
+                        android:layout_width="match_parent"
+                        android:layout_height="46dp"
+                        android:layout_marginTop="10dp"
+                        android:text="قفل / فحص بالبصمة"
+                        app:backgroundTint="#1E40AF"
+                        app:cornerRadius="16dp" />
                 </LinearLayout>
 
-                <!-- صندوق المخرجات واللوج والإشعارات -->
+                <!-- صندوق النتائج واللوج والإشعارات -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    app:cardBackgroundColor="#0D1D3A"
-                    app:cardCornerRadius="14dp">
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#0D1B36"
+                    app:cardCornerRadius="22dp"
+                    app:strokeColor="#1E293B"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="14dp">
+                        android:padding="16dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -580,28 +625,28 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="النتائج وسجل اللوج والإشعارات"
-                                android:textColor="#93C5FD"
-                                android:textSize="13sp"
+                                android:text="النتائج والإشعارات واللوج"
+                                android:textColor="#7DD3FC"
+                                android:textSize="14sp"
                                 android:textStyle="bold" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnClearLog"
                                 android:layout_width="wrap_content"
-                                android:layout_height="34dp"
+                                android:layout_height="36dp"
                                 android:text="مسح اللوج"
                                 android:textSize="11sp"
                                 app:backgroundTint="#334155"
-                                app:cornerRadius="8dp" />
+                                app:cornerRadius="14dp" />
                         </LinearLayout>
 
                         <TextView
                             android:id="@+id/tvOutput"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="10dp"
                             android:text="لا توجد بيانات معروضة بعد."
-                            android:textColor="#E2E8F0"
+                            android:textColor="#F1F5F9"
                             android:textSize="13sp" />
 
                         <TextView
@@ -609,8 +654,8 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
-                            android:background="#081124"
-                            android:padding="10dp"
+                            android:background="#060D1F"
+                            android:padding="12dp"
                             android:text="سجل اللوج فارغ."
                             android:textColor="#94A3B8"
                             android:textSize="12sp" />
@@ -620,15 +665,16 @@
         </ScrollView>
     </LinearLayout>
 
-    <!-- شريط التنقل السفلي (6 تبويبات) -->
+    <!-- شريط التنقل السفلي الواضح (5 أقسام رئيسية) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#0D1D3A"
+        android:background="#0D1B36"
+        app:itemActiveIndicatorColor="#1D4ED8"
         app:itemIconTint="#93C5FD"
-        app:itemTextColor="#93C5FD"
+        app:itemTextColor="#E2E8F0"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
