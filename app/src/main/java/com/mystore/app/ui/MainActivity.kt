@@ -10,7 +10,13 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -53,6 +59,9 @@ class MainActivity : AppCompatActivity() {
     private var lastExportContent: String = ""
     private var lockShownInSession: Boolean = false
     private var isUnlockedInSession: Boolean = false
+    private var isEditModeEnabled: Boolean = false
+    private var categorySpinner: Spinner? = null
+    private var updatingSpinnerProgrammatically: Boolean = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -84,6 +93,8 @@ class MainActivity : AppCompatActivity() {
 
         applyPaletteDirectly(prefs.isDarkMode)
         loadLocalCardCacheFromPrefs()
+        setupCategorySelectorBeforeStockActions()
+        setCardsEditorReadOnly(true)
 
         if (prefs.isServiceEnabled) {
             AutomationService.startService(this)
@@ -109,6 +120,73 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         syncServiceStatusUi()
+    }
+
+    private fun setupCategorySelectorBeforeStockActions() {
+        val parent = binding.etStockCategory.parent as? ViewGroup ?: return
+        val indexOfCatField = parent.indexOfChild(binding.etStockCategory)
+        if (indexOfCatField < 0) return
+
+        val spinner = Spinner(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = (8 * resources.displayMetrics.density).toInt()
+            }
+        }
+        categorySpinner = spinner
+        parent.addView(spinner, indexOfCatField)
+        refreshCategorySpinner(selectedStockCategory)
+
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parentAdapter: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (updatingSpinnerProgrammatically) return
+                val chosen = spinner.selectedItem?.toString()?.trim().orEmpty()
+                if (chosen.isNotEmpty() && chosen != selectedStockCategory) {
+                    selectCategoryForStock(chosen)
+                }
+            }
+
+            override fun onNothingSelected(parentAdapter: AdapterView<*>?) {}
+        }
+    }
+
+    private fun refreshCategorySpinner(activeCat: String) {
+        val spinner = categorySpinner ?: return
+        val allCats = linkedSetOf("100", "200", "300", "500", "1000", "2000")
+            .apply {
+                addAll(prefs.getAllowedCategories())
+                addAll(categoryCardsCache.keys)
+                add(activeCat)
+            }
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toList()
+
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, allCats).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        updatingSpinnerProgrammatically = true
+        spinner.adapter = adapter
+        val idx = allCats.indexOf(activeCat)
+        if (idx >= 0) {
+            spinner.setSelection(idx, false)
+        }
+        updatingSpinnerProgrammatically = false
+    }
+
+    private fun setCardsEditorReadOnly(readOnly: Boolean) {
+        isEditModeEnabled = !readOnly
+        binding.etBulkCodes.isFocusable = !readOnly
+        binding.etBulkCodes.isFocusableInTouchMode = !readOnly
+        binding.etBulkCodes.isCursorVisible = !readOnly
+        binding.etBulkCodes.isLongClickable = !readOnly
+        binding.btnEditCategoryStock.text = if (readOnly) {
+            "تعديل / حذف الكروت"
+        } else {
+            "حفظ التعديل / الحذف"
+        }
     }
 
     private fun applyPaletteDirectly(darkMode: Boolean) {
@@ -226,29 +304,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupBottomNavigation() {
         binding.bottomNav.setOnItemSelectedListener { item ->
-            binding.sectionHome.visibility = android.view.View.GONE
-            binding.sectionSend.visibility = android.view.View.GONE
-            binding.sectionStock.visibility = android.view.View.GONE
-            binding.sectionCustomers.visibility = android.view.View.GONE
-            binding.sectionSettings.visibility = android.view.View.GONE
+            binding.sectionHome.visibility = View.GONE
+            binding.sectionSend.visibility = View.GONE
+            binding.sectionStock.visibility = View.GONE
+            binding.sectionCustomers.visibility = View.GONE
+            binding.sectionSettings.visibility = View.GONE
 
             when (item.itemId) {
                 R.id.nav_home -> {
-                    binding.sectionHome.visibility = android.view.View.VISIBLE
+                    binding.sectionHome.visibility = View.VISIBLE
                     refreshDashboardSummary()
                 }
-                R.id.nav_send -> binding.sectionSend.visibility = android.view.View.VISIBLE
+                R.id.nav_send -> binding.sectionSend.visibility = View.VISIBLE
                 R.id.nav_stock -> {
-                    binding.sectionStock.visibility = android.view.View.VISIBLE
+                    binding.sectionStock.visibility = View.VISIBLE
+                    refreshCategorySpinner(selectedStockCategory)
                     binding.etStockCategory.setText(selectedStockCategory)
-                    loadCategoryIntoEditor(selectedStockCategory)
+                    loadCategoryView(selectedStockCategory)
                 }
                 R.id.nav_customers -> {
-                    binding.sectionCustomers.visibility = android.view.View.VISIBLE
+                    binding.sectionCustomers.visibility = View.VISIBLE
                     loadSalesAndReceiptSummary()
                 }
                 R.id.nav_settings -> {
-                    binding.sectionSettings.visibility = android.view.View.VISIBLE
+                    binding.sectionSettings.visibility = View.VISIBLE
                     loadRulesIntoSettingsFields()
                 }
             }
@@ -352,17 +431,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // أزرار الفئات السريعة (تبديل الفئة فورياً وتحميل كروت الفئة في المحرر)
         binding.btnCat100.text = "100"
         binding.btnCat200.text = "200"
         binding.btnCat500.text = "300"
-        binding.btnCat1000.text = "1000"
+        binding.btnCat1000.text = "500"
         binding.btnCat2000.text = "2000"
 
         binding.btnCat100.setOnClickListener { selectCategoryForStock("100") }
         binding.btnCat200.setOnClickListener { selectCategoryForStock("200") }
         binding.btnCat500.setOnClickListener { selectCategoryForStock("300") }
-        binding.btnCat1000.setOnClickListener { selectCategoryForStock("1000") }
+        binding.btnCat1000.setOnClickListener { selectCategoryForStock("500") }
         binding.btnCat2000.setOnClickListener { selectCategoryForStock("2000") }
 
         binding.etStockCategory.setOnEditorActionListener { _, _, _ ->
@@ -373,25 +451,41 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        // إضافة أكواد جديدة إلى الفئة المحددة
+        // إضافة أكواد جديدة (يفعل التعديل لكتابة الأكواد الجديدة ثم يضيفها)
         binding.btnAddCodes.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
+            if (!isEditModeEnabled && binding.etBulkCodes.text.isNullOrBlank()) {
+                setCardsEditorReadOnly(false)
+                binding.etBulkCodes.setText("")
+                binding.etBulkCodes.hint = "اكتب الأكواد الجديدة (كود بكل سطر) ثم اضغط إضافة الأكواد..."
+                toast("اكتب الأكواد الجديدة ثم اضغط إضافة الأكواد")
+                return@setOnClickListener
+            }
             val codes = extractLines(binding.etBulkCodes.text.toString())
             if (codes.isEmpty()) {
-                toast("أدخل كوداً واحداً على الأقل في كل سطر")
+                toast("أدخل كوداً واحداً على الأقل")
                 return@setOnClickListener
             }
             insertCodesList(category, codes)
         }
 
-        // حفظ التعديل أو الحذف الجماعي الفوري لكل الأسطر الموجودة في المربع
-        binding.btnEditCategoryStock.text = "حفظ تعديل / حذف الكروت"
+        // زر التعديل/الحذف: يفتح وضع التحرير عند الضغط عليه، وعند الضغط مرة أخرى يحفظ التعديلات والحذف ويعود للقراءة فقط
         binding.btnEditCategoryStock.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
-            val updatedCodes = extractLines(binding.etBulkCodes.text.toString())
-            saveBulkEditsForCategory(category, updatedCodes)
+            val currentList = categoryCardsCache.getOrPut(category) { mutableListOf() }
+
+            if (!isEditModeEnabled) {
+                setCardsEditorReadOnly(false)
+                binding.etBulkCodes.setText(currentList.joinToString("\n"))
+                binding.etBulkCodes.hint = "عدّل أو احذف أي سطر ثم اضغط حفظ التعديل / الحذف..."
+                toast("وضع التعديل مفعّل: عدّل أو احذف الأسطر ثم اضغط حفظ التعديل / الحذف")
+            } else {
+                val updatedCodes = extractLines(binding.etBulkCodes.text.toString())
+                saveBulkEditsForCategory(category, updatedCodes)
+                setCardsEditorReadOnly(true)
+            }
         }
 
         binding.btnImportFile.setOnClickListener {
@@ -404,10 +498,8 @@ class MainActivity : AppCompatActivity() {
         binding.btnExportFile.setOnClickListener {
             val category = binding.etStockCategory.text.toString().trim().ifEmpty { selectedStockCategory }
             selectedStockCategory = category
-            val list = extractLines(binding.etBulkCodes.text.toString()).ifEmpty {
-                categoryCardsCache[category].orEmpty()
-            }
-            lastExportContent = list.joinToString("\n")
+            val list = categoryCardsCache[category].orEmpty()
+            lastExportContent = list.mapIndexed { idx, code -> "${idx + 1}. $code" }.joinToString("\n")
             val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
             exportTextLauncher.launch("cards_${category}_$stamp.txt")
         }
@@ -459,7 +551,8 @@ class MainActivity : AppCompatActivity() {
             selectedStockCategory = newCat
             binding.etStockCategory.setText(newCat)
             binding.etNewCategory.setText("")
-            loadCategoryIntoEditor(newCat)
+            refreshCategorySpinner(newCat)
+            loadCategoryView(newCat)
             val msg = "تمت إضافة الفئة ($newCat) وتحديدها."
             appendOutput(msg)
             recordLog(msg)
@@ -493,6 +586,7 @@ class MainActivity : AppCompatActivity() {
             if (bundles.isNotEmpty()) prefs.bundlesCsv = bundles
             if (tpl.isNotBlank()) prefs.replyTemplate = tpl
 
+            refreshCategorySpinner(selectedStockCategory)
             val backupPath = createLocalBackupFile()
             val msg = "تم حفظ القواعد وأُنشئت نسخة احتياطية:\n$backupPath"
             appendOutput(msg)
@@ -551,25 +645,39 @@ class MainActivity : AppCompatActivity() {
     private fun selectCategoryForStock(cat: String) {
         selectedStockCategory = cat
         binding.etStockCategory.setText(cat)
-        loadCategoryIntoEditor(cat)
+        refreshCategorySpinner(cat)
+        setCardsEditorReadOnly(true)
+        loadCategoryView(cat)
     }
 
-    private fun loadCategoryIntoEditor(cat: String) {
+    private fun loadCategoryView(cat: String) {
         val list = categoryCardsCache.getOrPut(cat) { mutableListOf() }
-        binding.etBulkCodes.setText(list.joinToString("\n"))
+        binding.etBulkCodes.setText("")
+        binding.etBulkCodes.hint = "اضغط (إضافة الأكواد) لإضافة أكواد جديدة أو (تعديل / حذف الكروت) لتحرير القائمة..."
 
         val allCats = linkedSetOf("100", "200", "300", "500", "1000", "2000")
-            .apply { addAll(prefs.getAllowedCategories()); addAll(categoryCardsCache.keys) }
-            .filter { it.isNotBlank() }
+            .apply {
+                addAll(prefs.getAllowedCategories())
+                addAll(categoryCardsCache.keys)
+            }
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
 
         val countersLine = allCats.joinToString(" | ") { c ->
             "$c:${categoryCardsCache[c]?.size ?: 0}"
         }
 
+        val numberedCards = if (list.isEmpty()) {
+            "لا توجد كروت في فئة $cat حالياً."
+        } else {
+            list.mapIndexed { idx, code -> "${idx + 1} - $code" }.joinToString("\n")
+        }
+
         appendOutput(
             "الفئة المحددة: $cat | عدد كروت الفئة: ${list.size}\n" +
                 "عداد الفئات: $countersLine\n" +
-                "عدّل أو احذف أي سطر مباشرة في المربع ثم اضغط (حفظ تعديل / حذف الكروت)."
+                "----------------------------------\n" +
+                numberedCards
         )
         recordLog("عرض كروت فئة $cat (العدد: ${list.size}).")
     }
@@ -578,7 +686,7 @@ class MainActivity : AppCompatActivity() {
         val previousCount = categoryCardsCache[category]?.size ?: 0
         categoryCardsCache[category] = updatedCodes.toMutableList()
         saveLocalCardCacheToPrefs()
-        loadCategoryIntoEditor(category)
+        loadCategoryView(category)
 
         val diff = updatedCodes.size - previousCount
         val summaryChange = when {
@@ -594,7 +702,8 @@ class MainActivity : AppCompatActivity() {
         val targetList = categoryCardsCache.getOrPut(category) { mutableListOf() }
         targetList.addAll(codes)
         saveLocalCardCacheToPrefs()
-        loadCategoryIntoEditor(category)
+        setCardsEditorReadOnly(true)
+        loadCategoryView(category)
 
         lifecycleScope.launch {
             val inserted = withContext(Dispatchers.IO) {
@@ -671,7 +780,7 @@ class MainActivity : AppCompatActivity() {
             append("قالب الرد: ${prefs.replyTemplate}\n")
             categoryCardsCache.forEach { (cat, list) ->
                 append("\n[فئة $cat - العدد ${list.size}]\n")
-                list.forEach { append("$it\n") }
+                list.forEachIndexed { idx, code -> append("${idx + 1} - $code\n") }
             }
         }
         FileOutputStream(file).use { it.write(content.toByteArray(Charsets.UTF_8)) }
