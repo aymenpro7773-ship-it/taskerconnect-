@@ -67,11 +67,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = AppPreferences(this)
-        AppPreferences.applyTheme(prefs.isDarkMode)
+        AppPreferences.applyTheme(prefs.isDarkMode, this)
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        applyPaletteDirectly(prefs.isDarkMode)
 
         if (prefs.isServiceEnabled) {
             AutomationService.startService(this)
@@ -83,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         setupActions()
         loadRulesIntoSettingsFields()
         refreshDashboardSummary()
-        recordLog("تم تشغيل التطبيق وتهيئة جميع الأقسام.")
+        recordLog("تم تشغيل التطبيق بنمط 2027 وتهيئة جميع الأقسام.")
 
         if (prefs.isLockEnabled) {
             triggerBiometricOrSecretLock()
@@ -93,6 +95,51 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         syncServiceStatusUi()
+    }
+
+    private fun applyPaletteDirectly(darkMode: Boolean) {
+        val bgColor = ContextCompat.getColor(this, if (darkMode) R.color.night_app_bg else R.color.app_bg)
+        val cardColor = ContextCompat.getColor(this, if (darkMode) R.color.night_card_bg else R.color.card_bg)
+        val inputColor = ContextCompat.getColor(this, if (darkMode) R.color.night_input_bg else R.color.input_bg)
+        val logColor = ContextCompat.getColor(this, if (darkMode) R.color.night_log_bg else R.color.log_bg)
+        val textPrimary = ContextCompat.getColor(this, if (darkMode) R.color.night_text_primary else R.color.text_primary)
+        val textSecondary = ContextCompat.getColor(this, if (darkMode) R.color.night_text_secondary else R.color.text_secondary)
+        val textHint = ContextCompat.getColor(this, if (darkMode) R.color.night_text_hint else R.color.text_hint)
+        val accent = ContextCompat.getColor(this, if (darkMode) R.color.night_accent_primary else R.color.accent_primary)
+
+        binding.rootCoordinator.setBackgroundColor(bgColor)
+        binding.tvHeaderTitle.setTextColor(accent)
+        binding.tvServiceStatus.setTextColor(textSecondary)
+        binding.tvOutput.setTextColor(textPrimary)
+        binding.tvEventLog.setTextColor(textSecondary)
+        binding.tvEventLog.setBackgroundColor(logColor)
+        binding.bottomNav.setBackgroundColor(cardColor)
+        binding.bottomNav.itemTextColor = android.content.res.ColorStateList.valueOf(textPrimary)
+        binding.bottomNav.itemIconTintList = android.content.res.ColorStateList.valueOf(accent)
+
+        val inputs = listOf(
+            binding.etPhone,
+            binding.etMessage,
+            binding.etStockCategory,
+            binding.etBulkCodes,
+            binding.etSearchCustomer,
+            binding.etCustomerAliasKey,
+            binding.etCustomerAliasPhone,
+            binding.etAllowedCategories,
+            binding.etNewCategory,
+            binding.etLowStockThreshold,
+            binding.etKeywordPattern,
+            binding.etBundlesCsv,
+            binding.etReplyTemplate,
+            binding.etCategoryTemplateCat,
+            binding.etCategoryTemplateText,
+            binding.etNewSecret
+        )
+        inputs.forEach { edit ->
+            edit.setBackgroundColor(inputColor)
+            edit.setTextColor(textPrimary)
+            edit.setHintTextColor(textHint)
+        }
     }
 
     private fun syncServiceStatusUi() {
@@ -152,7 +199,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupActions() {
         binding.btnToggleTheme.setOnClickListener {
             prefs.isDarkMode = !prefs.isDarkMode
-            AppPreferences.applyTheme(prefs.isDarkMode)
+            AppPreferences.applyTheme(prefs.isDarkMode, this)
+            applyPaletteDirectly(prefs.isDarkMode)
             val modeText = if (prefs.isDarkMode) "الوضع الليلي" else "الوضع النهاري"
             toast("تم تفعيل $modeText")
             recordLog("تبديل المظهر إلى $modeText.")
@@ -322,6 +370,21 @@ class MainActivity : AppCompatActivity() {
             loadSalesReport(7, "الأرشيف (آخر 7 أيام)")
         }
 
+        binding.btnSaveCustomerAlias.setOnClickListener {
+            val key = binding.etCustomerAliasKey.text.toString().trim()
+            val targetPhone = binding.etCustomerAliasPhone.text.toString().trim()
+            if (key.isEmpty() || !prefs.isValidYemeniPhone(targetPhone)) {
+                toast("أدخل المفتاح/الرقم الظاهر ورقماً يمنياً صحيحاً من 9 أرقام يبدأ بـ 7")
+                return@setOnClickListener
+            }
+            prefs.setExplicitAlias(key, targetPhone)
+            binding.etCustomerAliasKey.setText("")
+            binding.etCustomerAliasPhone.setText("")
+            val msg = "تم حفظ الرقم البديل ($targetPhone) للمفتاح ($key)."
+            appendOutput(msg)
+            recordLog(msg)
+        }
+
         binding.btnAddCategory.setOnClickListener {
             val newCat = binding.etNewCategory.text.toString().trim()
             if (newCat.isEmpty()) {
@@ -336,6 +399,21 @@ class MainActivity : AppCompatActivity() {
             }
             binding.etNewCategory.setText("")
             val msg = "تمت إضافة الفئة ($newCat) إلى قائمة الفئات المسموحة."
+            appendOutput(msg)
+            recordLog(msg)
+        }
+
+        binding.btnSaveCategoryTemplate.setOnClickListener {
+            val cat = binding.etCategoryTemplateCat.text.toString().trim()
+            val catTpl = binding.etCategoryTemplateText.text.toString()
+            if (cat.isEmpty() || catTpl.isBlank()) {
+                toast("أدخل رقم الفئة ونص القالب المخصص لها")
+                return@setOnClickListener
+            }
+            prefs.setCategoryTemplate(cat, catTpl)
+            binding.etCategoryTemplateCat.setText("")
+            binding.etCategoryTemplateText.setText("")
+            val msg = "تم حفظ قالب الرد المخصص لفئة $cat."
             appendOutput(msg)
             recordLog(msg)
         }
@@ -476,7 +554,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun exportCurrentReportToUri(uri: Uri) {
         val contentToSave = buildString {
-            append("=== CONNECT NET • ELITE BLUE 2027 ===\n")
+            append("=== تقرير إدارة كروت الإنترنت • 2027 ===\n")
             append("التاريخ: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n")
             append("${binding.tvServiceStatus.text}\n")
             append("مبيعات اليوم: ${binding.tvTodaySalesCount.text} | إجمالي المخزون: ${binding.tvTotalStockCount.text}\n\n")
@@ -593,14 +671,15 @@ class MainActivity : AppCompatActivity() {
             val parsed = MessageParser.parse(
                 body = sampleInput,
                 keywordPattern = prefs.keywordPattern,
-                phonePattern = prefs.phonePattern
+                phonePattern = prefs.phonePattern,
+                allowedSourcesCsv = prefs.allowedSourcesCsv
             )
             val category = parsed.category.orEmpty()
             val phone = (parsed.customerPhone ?: fallbackPhone).trim()
             val allowed = prefs.getAllowedCategories()
 
             if (category.isEmpty() || phone.isEmpty()) {
-                val msg = "[محاكاة] أدخل فئة ورقم عميل مثل: اضيف 100 771234567"
+                val msg = "[محاكاة] أدخل فئة ورقم عميل مثل: اضيف 100 771234567 jaib"
                 appendOutput(msg)
                 recordLog(msg)
                 return@launch
