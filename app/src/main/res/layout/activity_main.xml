@@ -12,7 +12,6 @@
         android:orientation="vertical"
         android:paddingBottom="84dp">
 
-        <!-- الشريط العلوي -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,9 +33,9 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginEnd="12dp"
-                    android:contentDescription="شعار التطبيق"
+                    android:contentDescription="شعار connect net"
                     android:scaleType="centerCrop"
-                    android:src="@mipmap/ic_launcher" />
+                    android:src="@drawable/connect_net_logo" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -48,7 +47,7 @@
                         android:id="@+id/tvHeaderTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="إدارة كروت الإنترنت • 2027"
+                        android:text="CONNECT NET • ELITE 2027"
                         android:textColor="@color/accent_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -560,7 +559,6 @@
                             app:cornerRadius="14dp" />
                     </LinearLayout>
 
-                    <!-- ربط رقم بديل للزبون -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -708,7 +706,6 @@
                         android:textColor="@color/text_primary"
                         android:textColorHint="@color/text_hint" />
 
-                    <!-- قالب خاص لكل فئة -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -897,7 +894,6 @@
         </ScrollView>
     </LinearLayout>
 
-    <!-- شريط التنقل السفلي -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
