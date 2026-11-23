@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        syncServiceStatusUi()
         requestNeededPermissions()
         setupBottomNavigation()
         setupActions()
@@ -59,6 +60,19 @@ class MainActivity : AppCompatActivity() {
 
         if (prefs.isLockEnabled && prefs.hasSecret()) {
             showLockDialog()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        syncServiceStatusUi()
+    }
+
+    private fun syncServiceStatusUi() {
+        binding.tvServiceStatus.text = if (prefs.isServiceEnabled) {
+            "حالة الخدمة: نشطة"
+        } else {
+            "حالة الخدمة: متوقفة"
         }
     }
 
@@ -123,17 +137,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnStartService.setOnClickListener {
+            prefs.isServiceEnabled = true
             AutomationService.startService(this)
-            binding.tvServiceStatus.text = "حالة الخدمة: نشطة"
+            syncServiceStatusUi()
             appendOutput("تم تشغيل خدمة الأتمتة.")
             recordLog("تشغيل خدمة الأتمتة.")
         }
 
         binding.btnStopService.setOnClickListener {
+            prefs.isServiceEnabled = false
             AutomationService.stopService(this)
-            binding.tvServiceStatus.text = "حالة الخدمة: متوقفة"
-            appendOutput("تم إيقاف خدمة الأتمتة.")
-            recordLog("إيقاف خدمة الأتمتة.")
+            syncServiceStatusUi()
+            appendOutput("تم إيقاف خدمة الأتمتة يدوياً ولن تعود للعمل إلا بتشغيلها.")
+            recordLog("إيقاف خدمة الأتمتة يدوياً.")
         }
 
         binding.btnReportDaily.setOnClickListener { loadSalesReport(1, "يومي") }
